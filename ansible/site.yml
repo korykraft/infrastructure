@@ -1,0 +1,9 @@
+---
+- name: Configure homelab server
+  hosts: homelab
+  become: true
+  roles:
+    - common
+    - base
+    - docker
+    - syncthing

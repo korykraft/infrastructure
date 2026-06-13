@@ -1,0 +1,40 @@
+---
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install base packages
+  ansible.builtin.apt:
+    name:
+      - fish
+      - git
+      - curl
+      - wget
+      - jq
+      - rsync
+      - htop
+      - ufw
+      - openssh-server
+    state: present
+
+- name: Ensure SSH service is enabled and running
+  ansible.builtin.service:
+    name: ssh
+    state: started
+    enabled: true
+
+- name: Allow OpenSSH through UFW
+  ansible.builtin.command: ufw allow OpenSSH
+  register: ufw_ssh_rule
+  changed_when: "'Skipping adding existing rule' not in ufw_ssh_rule.stdout"
+
+- name: Enable UFW with default deny policy
+  ansible.builtin.command: "{{ item }}"
+  loop:
+    - ufw default deny incoming
+    - ufw --force enable
+  register: ufw_commands
+  changed_when: >-
+    ufw_commands.stdout is defined and
+    ('updated' in ufw_commands.stdout.lower() or 'enabled' in ufw_commands.stdout.lower())

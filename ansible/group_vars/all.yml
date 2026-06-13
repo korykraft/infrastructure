@@ -1,0 +1,25 @@
+---
+homelab_root: /opt/homelab
+homelab_apps_dir: "{{ homelab_root }}/apps"
+homelab_data_dir: "{{ homelab_root }}/data"
+homelab_backup_dir: "{{ homelab_root }}/backups"
+homelab_compose_owner: "{{ ansible_user | default('ubuntu') }}"
+homelab_compose_group: "{{ ansible_user | default('ubuntu') }}"
+
+homelab_service_directories:
+  - "{{ homelab_apps_dir }}"
+  - "{{ homelab_apps_dir }}/forgejo"
+  - "{{ homelab_apps_dir }}/hermes"
+  - "{{ homelab_apps_dir }}/n8n"
+  - "{{ homelab_data_dir }}"
+  - "{{ homelab_data_dir }}/forgejo"
+  - "{{ homelab_data_dir }}/hermes"
+  - "{{ homelab_data_dir }}/n8n"
+  - "{{ homelab_backup_dir }}"
+
+docker_apt_arch_map:
+  x86_64: amd64
+  aarch64: arm64
+  armv7l: armhf
+
+docker_apt_arch: "{{ docker_apt_arch_map.get(ansible_architecture, 'amd64') }}"

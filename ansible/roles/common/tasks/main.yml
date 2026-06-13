@@ -1,0 +1,9 @@
+---
+- name: Ensure homelab directory structure exists
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ homelab_compose_owner }}"
+    group: "{{ homelab_compose_group }}"
+    mode: "0755"
+  loop: "{{ homelab_service_directories }}"

@@ -1,0 +1,14 @@
+---
+- name: Install Syncthing
+  ansible.builtin.apt:
+    name: syncthing
+    state: present
+    update_cache: true
+
+- name: Ensure Syncthing config directory exists
+  ansible.builtin.file:
+    path: "/home/{{ homelab_compose_owner }}/.config/syncthing"
+    state: directory
+    owner: "{{ homelab_compose_owner }}"
+    group: "{{ homelab_compose_group }}"
+    mode: "0755"

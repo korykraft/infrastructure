@@ -1,0 +1,11 @@
+services:
+  hermes:
+    image: ghcr.io/example/hermes:latest
+    container_name: hermes
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${HERMES_PORT:-8080}:8080"
+    volumes:
+      - ${HERMES_DATA_DIR}:/app/data
