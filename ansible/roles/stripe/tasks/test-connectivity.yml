@@ -1,0 +1,17 @@
+# ansible/roles/stripe/tasks/test-connectivity.yml
+---
+- name: Test API health endpoint from container network
+  community.docker.docker_container:
+    name: stripe-api-connectivity-test
+    image: curlimages/curl:latest
+    command: "http://host.docker.internal:8787/healthz"
+    auto_remove: true
+    detach: false
+    cleanup: true
+    etc_hosts:
+      host.docker.internal: host-gateway
+  register: stripe_api_connectivity
+
+- name: Show API connectivity result
+  ansible.builtin.debug:
+    var: stripe_api_connectivity.container.Output

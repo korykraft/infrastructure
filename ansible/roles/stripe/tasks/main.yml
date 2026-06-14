@@ -1,46 +1,39 @@
-# ansible/roles/stripe/tasks/main.yml
 ---
-- name: Ensure Stripe service directory exists
+- name: Create stripe instance directories
   ansible.builtin.file:
-    path: "/home/{{ server_user }}/docker/stripe"
+    path: "/home/{{ server_user }}/docker/stripe/{{ item.name }}"
     state: directory
     owner: "{{ server_user }}"
     group: "{{ server_user }}"
     mode: "0755"
+  loop: "{{ stripe_instances }}"
 
-- name: Copy Stripe docker-compose.yml
+- name: Create stripe env files
   ansible.builtin.template:
-    src: docker-compose.yml.j2
-    dest: "/home/{{ server_user }}/docker/stripe/docker-compose.yml"
-    owner: "{{ server_user }}"
-    group: "{{ server_user }}"
-    mode: "0644"
-
-- name: Copy Stripe env example
-  ansible.builtin.template:
-    src: stripe.env.example.j2
-    dest: "/home/{{ server_user }}/docker/stripe/.env.example"
-    owner: "{{ server_user }}"
-    group: "{{ server_user }}"
-    mode: "0644"
-
-- name: Check whether Stripe .env exists
-  ansible.builtin.stat:
-    path: "/home/{{ server_user }}/docker/stripe/.env"
-  register: stripe_env_file
-
-- name: Create Stripe .env from example if missing
-  ansible.builtin.copy:
-    src: "/home/{{ server_user }}/docker/stripe/.env.example"
-    dest: "/home/{{ server_user }}/docker/stripe/.env"
+    src: stripe.env.j2
+    dest: "/home/{{ server_user }}/docker/stripe/{{ item.name }}/.env"
     owner: "{{ server_user }}"
     group: "{{ server_user }}"
     mode: "0600"
-    remote_src: true
-  when: not stripe_env_file.stat.exists
+  loop: "{{ stripe_instances }}"
 
-- name: Start Stripe CLI listener
+- name: Create stripe compose files
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "/home/{{ server_user }}/docker/stripe/{{ item.name }}/docker-compose.yml"
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0644"
+  loop: "{{ stripe_instances }}"
+
+- name: Start stripe listeners
   community.docker.docker_compose_v2:
-    project_src: "/home/{{ server_user }}/docker/stripe"
+    project_src: "/home/{{ server_user }}/docker/stripe/{{ item.name }}"
     state: present
-  when: stripe_start_listener | default(false)
+  loop: "{{ stripe_instances }}"
+  when: stripe_start_listener | default(true)
+
+# ansible/roles/stripe/tasks/main.yml
+- name: Test Stripe forward target connectivity
+  ansible.builtin.import_tasks: test-connectivity.yml
+  when: stripe_test_connectivity | default(false)
