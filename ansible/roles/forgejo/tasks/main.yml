@@ -1,0 +1,44 @@
+---
+- name: Ensure Forgejo directories exist
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner | default(homelab_compose_owner) }}"
+    group: "{{ item.group | default(homelab_compose_group) }}"
+    mode: "{{ item.mode | default('0755') }}"
+  loop:
+    - path: "{{ forgejo_app_dir }}"
+    - path: "{{ forgejo_data_dir }}"
+      owner: '1000'
+      group: '1000'
+  when: forgejo_enabled
+
+- name: Deploy Forgejo environment file
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ forgejo_app_dir }}/.env"
+    owner: "{{ homelab_compose_owner }}"
+    group: "{{ homelab_compose_group }}"
+    mode: "0600"
+  when: forgejo_enabled
+
+- name: Deploy Forgejo Docker Compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ forgejo_app_dir }}/docker-compose.yml"
+    owner: "{{ homelab_compose_owner }}"
+    group: "{{ homelab_compose_group }}"
+    mode: "0644"
+  when: forgejo_enabled
+
+- name: Start Forgejo stack
+  ansible.builtin.command:
+    cmd: docker compose --project-name {{ forgejo_compose_project_name | quote }} up -d
+  args:
+    chdir: "{{ forgejo_app_dir }}"
+  register: forgejo_compose_up
+  changed_when: "'Started' in forgejo_compose_up.stdout or 'Created' in forgejo_compose_up.stdout or 'Recreated' in forgejo_compose_up.stdout or 'Pulled' in forgejo_compose_up.stdout"
+  when:
+    - forgejo_enabled
+    - forgejo_manage_service
+    - not (ansible_is_docker_test | default(false))

@@ -28,6 +28,7 @@
   ansible.builtin.command: ufw allow OpenSSH
   register: ufw_ssh_rule
   changed_when: "'Skipping adding existing rule' not in ufw_ssh_rule.stdout"
+  when: not (ansible_is_docker_test | default(false))
 
 - name: Enable UFW with default deny policy
   ansible.builtin.command: "{{ item }}"
@@ -38,3 +39,4 @@
   changed_when: >-
     ufw_commands.stdout is defined and
     ('updated' in ufw_commands.stdout.lower() or 'enabled' in ufw_commands.stdout.lower())
+  when: not (ansible_is_docker_test | default(false))

@@ -1,7 +1,7 @@
 services:
   forgejo:
-    image: codeberg.org/forgejo/forgejo:11
-    container_name: forgejo
+    image: "{{ forgejo_image }}"
+    container_name: "{{ forgejo_container_name }}"
     restart: unless-stopped
     env_file:
       - .env

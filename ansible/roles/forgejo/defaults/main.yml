@@ -1,0 +1,14 @@
+---
+forgejo_enabled: true
+forgejo_manage_service: true
+
+forgejo_app_dir: "{{ homelab_apps_dir }}/forgejo"
+forgejo_data_dir: "{{ homelab_data_dir }}/forgejo"
+forgejo_image: codeberg.org/forgejo/forgejo:11
+forgejo_container_name: forgejo
+forgejo_http_port: 3000
+forgejo_ssh_port: 2222
+forgejo_timezone_path: /etc/timezone
+forgejo_localtime_path: /etc/localtime
+
+forgejo_compose_project_name: forgejo

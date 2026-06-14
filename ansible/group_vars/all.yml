@@ -1,4 +1,5 @@
 ---
+homelab_user: kory
 homelab_root: /opt/homelab
 homelab_apps_dir: "{{ homelab_root }}/apps"
 homelab_data_dir: "{{ homelab_root }}/data"

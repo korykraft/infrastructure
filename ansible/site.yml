@@ -5,5 +5,7 @@
   roles:
     - common
     - base
-    - docker
+    - role: docker
+      when: not (ansible_is_docker_test | default(false))
+    - forgejo
     - syncthing
