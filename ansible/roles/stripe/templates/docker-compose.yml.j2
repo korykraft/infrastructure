@@ -1,0 +1,16 @@
+# ansible/roles/stripe/templates/docker-compose.yml.j2
+services:
+  stripe-cli:
+    image: stripe/stripe-cli:latest
+    container_name: stripe-cli
+    restart: unless-stopped
+    env_file:
+      - .env
+    command:
+      - listen
+      - --api-key
+      - ${STRIPE_API_KEY}
+      - --device-name
+      - ${STRIPE_DEVICE_NAME}
+      - --forward-to
+      - ${STRIPE_FORWARD_TO}

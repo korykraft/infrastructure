@@ -1,0 +1,46 @@
+# ansible/roles/stripe/tasks/main.yml
+---
+- name: Ensure Stripe service directory exists
+  ansible.builtin.file:
+    path: "/home/{{ server_user }}/docker/stripe"
+    state: directory
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0755"
+
+- name: Copy Stripe docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "/home/{{ server_user }}/docker/stripe/docker-compose.yml"
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0644"
+
+- name: Copy Stripe env example
+  ansible.builtin.template:
+    src: stripe.env.example.j2
+    dest: "/home/{{ server_user }}/docker/stripe/.env.example"
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0644"
+
+- name: Check whether Stripe .env exists
+  ansible.builtin.stat:
+    path: "/home/{{ server_user }}/docker/stripe/.env"
+  register: stripe_env_file
+
+- name: Create Stripe .env from example if missing
+  ansible.builtin.copy:
+    src: "/home/{{ server_user }}/docker/stripe/.env.example"
+    dest: "/home/{{ server_user }}/docker/stripe/.env"
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0600"
+    remote_src: true
+  when: not stripe_env_file.stat.exists
+
+- name: Start Stripe CLI listener
+  community.docker.docker_compose_v2:
+    project_src: "/home/{{ server_user }}/docker/stripe"
+    state: present
+  when: stripe_start_listener | default(false)

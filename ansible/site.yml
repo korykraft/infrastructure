@@ -11,6 +11,8 @@
     # - forgejo
     # - syncthing
     # - hermes
-    - hermes_skills
+    # - hermes_skills
+    # - wezterm
+    - stripe
     # - searxng
     # - mem0

@@ -19,6 +19,8 @@ hermes_skills:
   - obsidian-vault-management
   - workspace-agents-management
 
+stripe_start_listener: false
+
 # homelab_user: kory
 # homelab_root: /opt/homelab
 # homelab_apps_dir: "{{ homelab_root }}/apps"

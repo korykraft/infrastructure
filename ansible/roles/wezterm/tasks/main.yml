@@ -1,0 +1,57 @@
+# ansible/roles/wezterm/tasks/main.yml
+---
+- name: Ensure WezTerm apt keyring directory exists
+  ansible.builtin.file:
+    path: /usr/share/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Download WezTerm apt repository GPG key
+  ansible.builtin.get_url:
+    url: https://apt.fury.io/wez/gpg.key
+    dest: /usr/share/keyrings/wezterm-fury.gpg.key
+    mode: "0644"
+
+- name: Dearmor WezTerm GPG key
+  ansible.builtin.command:
+    cmd: >
+      gpg --yes --dearmor
+      --output /usr/share/keyrings/wezterm-fury.gpg
+      /usr/share/keyrings/wezterm-fury.gpg.key
+    creates: /usr/share/keyrings/wezterm-fury.gpg
+
+- name: Configure WezTerm apt repository
+  ansible.builtin.deb822_repository:
+    name: wezterm
+    types:
+      - deb
+    uris:
+      - https://apt.fury.io/wez/
+    suites:
+      - "*"
+    components:
+      - "*"
+    signed_by: /usr/share/keyrings/wezterm-fury.gpg
+    state: present
+
+- name: Install WezTerm
+  ansible.builtin.apt:
+    name: wezterm
+    state: present
+    update_cache: true
+
+- name: Verify WezTerm is installed
+  ansible.builtin.command: wezterm --version
+  register: wezterm_version
+  changed_when: false
+
+- name: Show WezTerm version
+  ansible.builtin.debug:
+    var: wezterm_version.stdout
+
+- name: Set machine identifier
+  ansible.builtin.copy:
+    dest: /etc/profile.d/machine-name.sh
+    content: |
+      export MACHINE_NAME="{{ inventory_hostname }}"
+    mode: "0644"
