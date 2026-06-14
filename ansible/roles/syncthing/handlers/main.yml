@@ -1,0 +1,5 @@
+---
+- name: Restart Syncthing
+  ansible.builtin.service:
+    name: "syncthing@{{ server_user }}"
+    state: restarted

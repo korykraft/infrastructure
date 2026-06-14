@@ -1,14 +1,20 @@
 services:
   forgejo:
-    image: "{{ forgejo_image }}"
-    container_name: "{{ forgejo_container_name }}"
+    image: codeberg.org/forgejo/forgejo:11
+    container_name: forgejo
     restart: unless-stopped
-    env_file:
-      - .env
-    ports:
-      - "${FORGEJO_HTTP_PORT:-3000}:3000"
-      - "${FORGEJO_SSH_PORT:-2222}:22"
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - FORGEJO__server__DOMAIN=${FORGEJO_DOMAIN}
+      - FORGEJO__server__ROOT_URL=${FORGEJO_ROOT_URL}
+      - FORGEJO__server__SSH_DOMAIN=${FORGEJO_DOMAIN}
+      - FORGEJO__server__SSH_PORT=${FORGEJO_SSH_PORT}
+      - FORGEJO__server__START_SSH_SERVER=false
     volumes:
-      - ${FORGEJO_DATA_DIR}:/data
-      - ${FORGEJO_TIMEZONE_PATH:-/etc/timezone}:/etc/timezone:ro
-      - ${FORGEJO_LOCALTIME_PATH:-/etc/localtime}:/etc/localtime:ro
+      - ./forgejo:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "${FORGEJO_HTTP_PORT}:3000"
+      - "${FORGEJO_SSH_PORT}:22"

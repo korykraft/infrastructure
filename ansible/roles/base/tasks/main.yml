@@ -16,7 +16,16 @@
       - htop
       - ufw
       - openssh-server
+      - sudo
     state: present
+
+- name: Ensure server user exists
+  ansible.builtin.user:
+    name: "{{ server_user }}"
+    shell: /usr/bin/fish
+    groups: sudo
+    append: true
+    create_home: true
 
 - name: Ensure SSH service is enabled and running
   ansible.builtin.service:
@@ -24,19 +33,25 @@
     state: started
     enabled: true
 
-- name: Allow OpenSSH through UFW
-  ansible.builtin.command: ufw allow OpenSSH
-  register: ufw_ssh_rule
-  changed_when: "'Skipping adding existing rule' not in ufw_ssh_rule.stdout"
+- name: Set UFW default deny incoming
+  community.general.ufw:
+    direction: incoming
+    policy: deny
   when: not (ansible_is_docker_test | default(false))
 
-- name: Enable UFW with default deny policy
-  ansible.builtin.command: "{{ item }}"
-  loop:
-    - ufw default deny incoming
-    - ufw --force enable
-  register: ufw_commands
-  changed_when: >-
-    ufw_commands.stdout is defined and
-    ('updated' in ufw_commands.stdout.lower() or 'enabled' in ufw_commands.stdout.lower())
+- name: Set UFW default allow outgoing
+  community.general.ufw:
+    direction: outgoing
+    policy: allow
+  when: not (ansible_is_docker_test | default(false))
+
+- name: Allow OpenSSH through UFW
+  community.general.ufw:
+    rule: allow
+    name: OpenSSH
+  when: not (ansible_is_docker_test | default(false))
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
   when: not (ansible_is_docker_test | default(false))

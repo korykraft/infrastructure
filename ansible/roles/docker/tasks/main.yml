@@ -1,14 +1,15 @@
 ---
-- name: Install Docker prerequisite packages
+- name: Install Docker repository prerequisites
   ansible.builtin.apt:
     name:
       - ca-certificates
       - curl
       - gnupg
+      - lsb-release
     state: present
     update_cache: true
 
-- name: Ensure apt keyrings directory exists
+- name: Create apt keyrings directory
   ansible.builtin.file:
     path: /etc/apt/keyrings
     state: directory
@@ -25,16 +26,22 @@
     name: docker
     types:
       - deb
-    uris: https://download.docker.com/linux/ubuntu
-    suites: "{{ ansible_distribution_release }}"
+    uris:
+      - https://download.docker.com/linux/ubuntu
+    suites:
+      - "{{ ansible_distribution_release }}"
     components:
       - stable
     architectures:
-      - "{{ docker_apt_arch }}"
+      - amd64
     signed_by: /etc/apt/keyrings/docker.asc
     state: present
 
-- name: Install Docker Engine and Compose plugin
+- name: Update apt cache after adding Docker repo
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Install Docker packages
   ansible.builtin.apt:
     name:
       - docker-ce
@@ -43,7 +50,6 @@
       - docker-buildx-plugin
       - docker-compose-plugin
     state: present
-    update_cache: true
 
 - name: Ensure Docker service is enabled and running
   ansible.builtin.service:
@@ -51,8 +57,26 @@
     state: started
     enabled: true
 
-- name: Add primary compose user to docker group
+- name: Add server user to docker group
   ansible.builtin.user:
-    name: "{{ homelab_compose_owner }}"
+    name: "{{ server_user }}"
     groups: docker
     append: true
+
+- name: Create docker root directory
+  ansible.builtin.file:
+    path: "/home/{{ server_user }}/docker"
+    state: directory
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0755"
+
+- name: Verify Docker is installed
+  ansible.builtin.command: docker --version
+  register: docker_version
+  changed_when: false
+
+- name: Verify Docker Compose plugin is installed
+  ansible.builtin.command: docker compose version
+  register: docker_compose_version
+  changed_when: false

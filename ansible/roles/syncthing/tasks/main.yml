@@ -1,14 +1,70 @@
 ---
+# roles/syncthing/tasks/main.yml
+
 - name: Install Syncthing
   ansible.builtin.apt:
     name: syncthing
     state: present
     update_cache: true
 
-- name: Ensure Syncthing config directory exists
-  ansible.builtin.file:
-    path: "/home/{{ homelab_compose_owner }}/.config/syncthing"
-    state: directory
-    owner: "{{ homelab_compose_owner }}"
-    group: "{{ homelab_compose_group }}"
-    mode: "0755"
+- name: Ensure Syncthing service is enabled and started
+  ansible.builtin.service:
+    name: "syncthing@{{ server_user }}"
+    state: started
+    enabled: true
+
+- name: Wait for Syncthing config directory to be created
+  ansible.builtin.wait_for:
+    path: "/home/{{ server_user }}/.config/syncthing"
+    timeout: 60
+
+- name: Find Syncthing config.xml
+  ansible.builtin.find:
+    paths:
+      - "/home/{{ server_user }}/.config/syncthing"
+      - "/home/{{ server_user }}/.local/state/syncthing"
+    patterns:
+      - "config.xml"
+    recurse: true
+  register: syncthing_config_search
+
+- name: Fail if Syncthing config.xml was not found
+  ansible.builtin.fail:
+    msg: >
+      Syncthing config.xml was not found.
+      Checked:
+      /home/{{ server_user }}/.config/syncthing
+      /home/{{ server_user }}/.local/state/syncthing
+  when: syncthing_config_search.matched == 0
+
+- name: Set Syncthing config path
+  ansible.builtin.set_fact:
+    syncthing_config_file: "{{ syncthing_config_search.files[0].path }}"
+
+- name: Configure Syncthing GUI to listen on all interfaces
+  ansible.builtin.replace:
+    path: "{{ syncthing_config_file }}"
+    regexp: '<address>127\.0\.0\.1:8384</address>'
+    replace: "<address>0.0.0.0:8384</address>"
+  notify: Restart Syncthing
+
+- name: Allow Syncthing GUI through UFW
+  ansible.builtin.command: ufw allow 8384/tcp
+  register: syncthing_ufw_rule
+  changed_when: "'Rules updated' in syncthing_ufw_rule.stdout"
+  when: not (ansible_is_docker_test | default(false))
+
+- name: Restart Syncthing if config changed
+  ansible.builtin.service:
+    name: "syncthing@{{ server_user }}"
+    state: restarted
+  when: syncthing_config_search.matched > 0
+
+- name: Verify Syncthing GUI is listening
+  ansible.builtin.command: ss -tulpn
+  register: syncthing_ports
+  changed_when: false
+
+- name: Show Syncthing listening ports
+  ansible.builtin.debug:
+    var: syncthing_ports.stdout_lines
