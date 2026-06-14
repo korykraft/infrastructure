@@ -1,0 +1,5 @@
+---
+searxng_dir: "{{ docker_root }}/searxng"
+searxng_port: 8080
+searxng_base_url: "http://{{ ansible_default_ipv4.address }}:{{ searxng_port }}/"
+searxng_secret_key: "changeme"

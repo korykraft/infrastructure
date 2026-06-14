@@ -1,0 +1,35 @@
+---
+- name: Create SearXNG directory
+  ansible.builtin.file:
+    path: "{{ searxng_dir }}"
+    state: directory
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0755"
+
+- name: Copy SearXNG settings
+  ansible.builtin.template:
+    src: settings.yml.j2
+    dest: "{{ searxng_dir }}/settings.yml"
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0644"
+
+- name: Copy SearXNG docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ searxng_dir }}/docker-compose.yml"
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0644"
+
+- name: Start SearXNG
+  community.docker.docker_compose_v2:
+    project_src: "{{ searxng_dir }}"
+    state: present
+
+- name: Allow SearXNG through UFW
+  ansible.builtin.command: ufw allow {{ searxng_port }}/tcp
+  register: searxng_ufw
+  changed_when: "'Rules updated' in searxng_ufw.stdout"
+  when: not (ansible_is_docker_test | default(false))

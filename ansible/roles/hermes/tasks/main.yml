@@ -26,6 +26,9 @@
       - ripgrep
       - ffmpeg
       - git
+      - portaudio19-dev
+      - libopus0
+      - espeak-ng
     state: present
     update_cache: true
 
