@@ -3,8 +3,8 @@
   hosts: homelab
   become: true
   roles:
-    # - base
-    # - role: docker
-    # when: not (ansible_is_docker_test | default(false))
-    # - forgejo
+    - base
+    - docker
+    - forgejo
     - syncthing
+    - hermes

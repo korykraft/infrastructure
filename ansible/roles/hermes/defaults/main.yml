@@ -1,0 +1,4 @@
+---
+hermes_install_script_url: "https://hermes-agent.nousresearch.com/install.sh"
+hermes_home: "/home/{{ server_user }}/.hermes"
+hermes_bin: "/home/{{ server_user }}/.local/bin/hermes"

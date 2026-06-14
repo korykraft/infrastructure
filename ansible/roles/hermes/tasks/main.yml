@@ -1,0 +1,50 @@
+---
+- name: Download NodeSource GPG key
+  ansible.builtin.get_url:
+    url: https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key
+    dest: /etc/apt/keyrings/nodesource.asc
+    mode: "0644"
+
+- name: Configure NodeSource apt repository
+  ansible.builtin.deb822_repository:
+    name: nodesource
+    types:
+      - deb
+    uris:
+      - https://deb.nodesource.com/node_22.x
+    suites:
+      - nodistro
+    components:
+      - main
+    signed_by: /etc/apt/keyrings/nodesource.asc
+    state: present
+
+- name: Install hermes prerequisites
+  ansible.builtin.apt:
+    name:
+      - nodejs
+      - ripgrep
+      - ffmpeg
+      - git
+    state: present
+    update_cache: true
+
+- name: Check if hermes is installed
+  ansible.builtin.stat:
+    path: "{{ hermes_bin }}"
+  register: hermes_binary
+
+- name: Install hermes agent
+  ansible.builtin.shell:
+    cmd: "curl -fsSL {{ hermes_install_script_url }} | bash"
+    executable: /bin/bash
+  become: true
+  become_user: "{{ server_user }}"
+  environment:
+    HOME: "/home/{{ server_user }}"
+  when: not hermes_binary.stat.exists
+
+- name: Verify hermes is installed
+  ansible.builtin.command: "{{ hermes_bin }} --version"
+  register: hermes_version
+  changed_when: false
