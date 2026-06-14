@@ -23,10 +23,12 @@ stripe_instances:
   - name: pictubook-local
     api_key: "{{ stripe_test_secret_key }}"
     forward_to: "http://192.168.1.201:8787/v1/stripe/webhook"
+    enabled: false
 
   - name: pictubook-vm
     api_key: "{{ stripe_test_secret_key }}"
     forward_to: "http://host.docker.internal:8787/v1/stripe/webhook"
+    enabled: true
 
 # stripe_start_listener: true
 # stripe_test_connectivity: true

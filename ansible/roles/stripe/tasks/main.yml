@@ -26,12 +26,19 @@
     mode: "0644"
   loop: "{{ stripe_instances }}"
 
-- name: Start stripe listeners
+- name: Start enabled stripe listeners
   community.docker.docker_compose_v2:
     project_src: "/home/{{ server_user }}/docker/stripe/{{ item.name }}"
     state: present
   loop: "{{ stripe_instances }}"
-  when: stripe_start_listener | default(true)
+  when: item.enabled | default(false)
+
+- name: Stop disabled stripe listeners
+  community.docker.docker_compose_v2:
+    project_src: "/home/{{ server_user }}/docker/stripe/{{ item.name }}"
+    state: absent
+  loop: "{{ stripe_instances }}"
+  when: not (item.enabled | default(false))
 
 # ansible/roles/stripe/tasks/main.yml
 - name: Test Stripe forward target connectivity
