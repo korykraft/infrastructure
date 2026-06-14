@@ -1,16 +1,39 @@
 ---
-- name: Create Hermes skills directory
+- name: Ensure Hermes skills root exists
   ansible.builtin.file:
-    path: "/home/{{ server_user }}/.hermes/skills/repo-stewardship"
+    path: "/home/{{ server_user }}/.hermes/skills"
     state: directory
     owner: "{{ server_user }}"
     group: "{{ server_user }}"
     mode: "0755"
 
-- name: Install repo stewardship skill
-  ansible.builtin.template:
-    src: repo-stewardship.SKILL.md.j2
-    dest: "/home/{{ server_user }}/.hermes/skills/repo-stewardship/SKILL.md"
+- name: Install Hermes skills
+  ansible.builtin.copy:
+    src: "{{ item }}/"
+    dest: "/home/{{ server_user }}/.hermes/skills/{{ item }}/"
     owner: "{{ server_user }}"
     group: "{{ server_user }}"
     mode: "0644"
+    directory_mode: "0755"
+  loop: "{{ hermes_skills }}"
+
+- name: Ensure workspace root exists
+  ansible.builtin.file:
+    path: "/home/{{ server_user }}/workspace"
+    state: directory
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0755"
+
+- name: Ensure standard workspace directories exist
+  ansible.builtin.file:
+    path: "/home/{{ server_user }}/workspace/{{ item }}"
+    state: directory
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0755"
+  loop:
+    - projects
+    - infrastructure
+    - agents
+    - vault

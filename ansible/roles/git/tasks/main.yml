@@ -1,0 +1,32 @@
+---
+- name: Configure global git aliases
+  community.general.git_config:
+    name: "{{ item.name }}"
+    scope: global
+    value: "{{ item.value }}"
+  become: true
+  become_user: "{{ server_user }}"
+  loop:
+    - { name: alias.st, value: status }
+    - { name: alias.co, value: checkout }
+    - { name: alias.br, value: branch }
+    - { name: alias.ci, value: commit }
+    - { name: alias.last, value: "log -1 HEAD" }
+    - { name: alias.lg, value: "log --graph --oneline --decorate --all" }
+    - { name: alias.unstage, value: "restore --staged ." }
+    - { name: alias.df, value: diff }
+    - { name: alias.dfs, value: "diff --staged" }
+    - { name: alias.rv, value: revert }
+
+- name: Configure global git settings
+  community.general.git_config:
+    name: "{{ item.name }}"
+    scope: global
+    value: "{{ item.value }}"
+  become: true
+  become_user: "{{ server_user }}"
+  loop:
+    - { name: init.defaultBranch, value: main }
+    - { name: pull.rebase, value: "false" }
+    - { name: fetch.prune, value: "true" }
+    - { name: core.editor, value: "nano" }

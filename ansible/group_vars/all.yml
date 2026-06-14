@@ -10,6 +10,15 @@ forgejo_ssh_port: 222
 forgejo_domain: "192.168.1.84"
 forgejo_root_url: "http://192.168.1.84:3000/"
 
+hermes_skills:
+  - repo-stewardship
+  - ansible-best-practices
+  - typescript-standards
+  - cloudflare-workers
+  - software-development
+  - obsidian-vault-management
+  - workspace-agents-management
+
 # homelab_user: kory
 # homelab_root: /opt/homelab
 # homelab_apps_dir: "{{ homelab_root }}/apps"
