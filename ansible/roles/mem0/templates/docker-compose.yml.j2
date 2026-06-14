@@ -1,0 +1,62 @@
+name: mem0
+
+services:
+  mem0:
+    build:
+      context: {{ mem0_dir }}/source/server
+      dockerfile: Dockerfile
+    container_name: mem0
+    restart: unless-stopped
+    ports:
+      - "{{ mem0_api_port }}:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./history:/app/history
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - mem0_network
+
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: mem0-postgres
+    restart: unless-stopped
+    shm_size: "128mb"
+    environment:
+      - POSTGRES_USER={{ mem0_postgres_user }}
+      - POSTGRES_PASSWORD={{ mem0_postgres_password }}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -q -d postgres -U {{ mem0_postgres_user }}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_db:/var/lib/postgresql/data
+      - {{ mem0_dir }}/source/server/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    networks:
+      - mem0_network
+
+  mem0-dashboard:
+    build:
+      context: {{ mem0_dir }}/source/server/dashboard
+    container_name: mem0-dashboard
+    restart: unless-stopped
+    ports:
+      - "{{ mem0_dashboard_port }}:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://{{ ansible_default_ipv4.address }}:{{ mem0_api_port }}
+      - API_INTERNAL_URL=http://mem0:8000
+      - NEXT_PUBLIC_INSTANCE_NAME=Mem0
+    depends_on:
+      - mem0
+    networks:
+      - mem0_network
+
+volumes:
+  postgres_db:
+
+networks:
+  mem0_network:
+    driver: bridge

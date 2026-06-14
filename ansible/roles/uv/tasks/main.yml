@@ -1,0 +1,17 @@
+---
+- name: Install uv
+  ansible.builtin.shell: |
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+  args:
+    creates: "/home/{{ server_user }}/.local/bin/uv"
+  become: true
+  become_user: "{{ server_user }}"
+
+- name: Ensure local bin exists in fish user path
+  ansible.builtin.lineinfile:
+    path: "/home/{{ server_user }}/.config/fish/config.fish"
+    line: "fish_add_path ~/.local/bin"
+    create: true
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0644"

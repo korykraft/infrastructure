@@ -1,0 +1,15 @@
+---
+mem0_dir: "{{ docker_root }}/mem0"
+mem0_api_port: 8888
+mem0_dashboard_port: 3001
+
+mem0_postgres_user: postgres
+mem0_postgres_password: changeme
+mem0_jwt_secret: changeme
+mem0_admin_api_key: ""
+
+# Set at least one of these in group_vars or vault
+mem0_openai_api_key: ""
+mem0_anthropic_api_key: ""
+
+mem0_telemetry: "false"

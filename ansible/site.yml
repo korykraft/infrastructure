@@ -4,8 +4,12 @@
   become: true
   roles:
     - base
-    - docker
-    - forgejo
-    - syncthing
+    - node
+    - uv
+    # - docker
+    # - forgejo
+    # - syncthing
     - hermes
+    - hermes_skills
     - searxng
+    # - mem0

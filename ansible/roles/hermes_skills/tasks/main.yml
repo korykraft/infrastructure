@@ -1,0 +1,16 @@
+---
+- name: Create Hermes skills directory
+  ansible.builtin.file:
+    path: "/home/{{ server_user }}/.hermes/skills/repo-stewardship"
+    state: directory
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0755"
+
+- name: Install repo stewardship skill
+  ansible.builtin.template:
+    src: repo-stewardship.SKILL.md.j2
+    dest: "/home/{{ server_user }}/.hermes/skills/repo-stewardship/SKILL.md"
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0644"

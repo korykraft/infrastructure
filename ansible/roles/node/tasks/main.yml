@@ -1,0 +1,13 @@
+---
+- name: Install Node.js and npm from Ubuntu packages
+  ansible.builtin.apt:
+    name:
+      - nodejs
+      - npm
+    state: present
+    update_cache: true
+
+- name: Install pnpm globally
+  community.general.npm:
+    name: pnpm
+    global: true

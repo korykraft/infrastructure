@@ -1,0 +1,51 @@
+---
+- name: Create mem0 directory
+  ansible.builtin.file:
+    path: "{{ mem0_dir }}"
+    state: directory
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0755"
+
+- name: Clone mem0 repository
+  ansible.builtin.git:
+    repo: https://github.com/mem0ai/mem0.git
+    dest: "{{ mem0_dir }}/source"
+    version: main
+    update: false
+  become: true
+  become_user: "{{ server_user }}"
+
+- name: Copy mem0 env file
+  ansible.builtin.template:
+    src: .env.j2
+    dest: "{{ mem0_dir }}/.env"
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0600"
+
+- name: Copy mem0 docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ mem0_dir }}/docker-compose.yml"
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0644"
+
+- name: Start mem0
+  community.docker.docker_compose_v2:
+    project_src: "{{ mem0_dir }}"
+    build: policy
+    state: present
+
+- name: Allow mem0 API through UFW
+  ansible.builtin.command: ufw allow {{ mem0_api_port }}/tcp
+  register: mem0_api_ufw
+  changed_when: "'Rules updated' in mem0_api_ufw.stdout"
+  when: not (ansible_is_docker_test | default(false))
+
+- name: Allow mem0 dashboard through UFW
+  ansible.builtin.command: ufw allow {{ mem0_dashboard_port }}/tcp
+  register: mem0_dashboard_ufw
+  changed_when: "'Rules updated' in mem0_dashboard_ufw.stdout"
+  when: not (ansible_is_docker_test | default(false))
