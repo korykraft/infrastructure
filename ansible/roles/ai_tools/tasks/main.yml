@@ -1,0 +1,10 @@
+---
+- name: Install Claude Code
+  community.general.npm:
+    name: "@anthropic-ai/claude-code"
+    global: true
+
+- name: Install Codex
+  community.general.npm:
+    name: "@openai/codex"
+    global: true

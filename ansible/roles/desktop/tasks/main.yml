@@ -1,0 +1,18 @@
+---
+- name: Install Ubuntu desktop
+  ansible.builtin.apt:
+    name: ubuntu-desktop-minimal
+    state: present
+    update_cache: true
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: Enable GDM display manager
+  ansible.builtin.service:
+    name: gdm3
+    state: started
+    enabled: true
+
+- name: Set default boot target to graphical
+  ansible.builtin.command: systemctl set-default graphical.target
+  changed_when: false

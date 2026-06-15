@@ -10,9 +10,12 @@
     # - docker
     # - forgejo
     # - syncthing
-    - hermes
+    # - hermes
+    # - ai_tools
+    - desktop
     # - hermes_skills
     # - wezterm
     # - stripe
     # - searxng
     # - mem0
+    # - ai_tools
