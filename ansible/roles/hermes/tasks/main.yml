@@ -34,3 +34,9 @@
   ansible.builtin.command: "{{ hermes_bin }} --version"
   register: hermes_version
   changed_when: false
+
+- name: Allow hermes dashboard port through firewall
+  community.general.ufw:
+    rule: allow
+    port: "9119"
+    proto: tcp

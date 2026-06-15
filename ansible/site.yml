@@ -10,9 +10,9 @@
     # - docker
     # - forgejo
     # - syncthing
-    # - hermes
+    - hermes
     # - hermes_skills
     # - wezterm
-    - stripe
+    # - stripe
     # - searxng
     # - mem0
