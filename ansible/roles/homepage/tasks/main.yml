@@ -70,6 +70,7 @@
     owner: "{{ server_user }}"
     group: "{{ server_user }}"
     mode: "0755"
+  notify: restart ci-status-server
 
 - name: Install CI status server systemd service
   ansible.builtin.template:
