@@ -13,3 +13,21 @@
         icon: si-robot
         href: https://hermes-agent.nousresearch.com/docs
         description: CLI AI Agent
+
+- CI:
+    - pictubook-app (main):
+        icon: si-githubactions
+        href: https://github.com/korykraft/pictubook-app/actions
+        description: GitHub Actions
+        widget:
+          type: customapi
+          url: http://ubuntu:9090/ci-status.json
+          refreshInterval: 60000
+          display: list
+          mappings:
+            - field: workflow
+              label: Workflow
+            - field: status
+              label: Status
+            - field: when
+              label: Last Run
