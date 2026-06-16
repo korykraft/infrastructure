@@ -19,6 +19,10 @@ hermes_skills:
   - obsidian-vault-management
   - workspace-agents-management
 
+homepage_dir: "{{ docker_root }}/homepage"
+homepage_port: 3001
+homepage_allowed_hosts: "192.168.1.84:3001"
+
 stripe_test_connectivity: false
 stripe_instances:
   - name: pictubook-vm
