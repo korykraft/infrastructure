@@ -1,42 +1,43 @@
 ---
-- name: Install hermes prerequisites
-  ansible.builtin.apt:
-    name:
-      - nodejs
-      - ripgrep
-      - ffmpeg
-      - git
-      - portaudio19-dev
-      - libopus0
-      - espeak-ng
-      - fd-find
-      - yq
-      - tree
-    state: present
-    update_cache: true
+# - name: Install hermes prerequisites
+#   ansible.builtin.apt:
+#     name:
+#       - nodejs
+#       - ripgrep
+#       - ffmpeg
+#       - git
+#       - portaudio19-dev
+#       - libopus0
+#       - espeak-ng
+#       - fd-find
+#       - yq
+#       - tree
+#     state: present
+#     update_cache: true
 
-- name: Check if hermes is installed
-  ansible.builtin.stat:
-    path: "{{ hermes_bin }}"
-  register: hermes_binary
+# - name: Check if hermes is installed
+#   ansible.builtin.stat:
+#     path: "{{ hermes_bin }}"
+#   register: hermes_binary
 
-- name: Install hermes agent
-  ansible.builtin.shell:
-    cmd: "curl -fsSL {{ hermes_install_script_url }} | bash"
-    executable: /bin/bash
-  become: true
-  become_user: "{{ server_user }}"
-  environment:
-    HOME: "/home/{{ server_user }}"
-  when: not hermes_binary.stat.exists
+# - name: Install hermes agent
+#   ansible.builtin.shell:
+#     cmd: "curl -fsSL {{ hermes_install_script_url }} | bash"
+#     executable: /bin/bash
+#   become: true
+#   become_user: "{{ server_user }}"
+#   environment:
+#     HOME: "/home/{{ server_user }}"
+#   when: not hermes_binary.stat.exists
 
-- name: Verify hermes is installed
-  ansible.builtin.command: "{{ hermes_bin }} --version"
-  register: hermes_version
-  changed_when: false
+# - name: Verify hermes is installed
+#   ansible.builtin.command: "{{ hermes_bin }} --version"
+#   register: hermes_version
+#   changed_when: false
 
-- name: Allow hermes dashboard port through firewall
+- name: Allow configured ports
   community.general.ufw:
     rule: allow
-    port: "9119"
+    port: "{{ item }}"
     proto: tcp
+  loop: "{{ ufw_allowed_ports }}"

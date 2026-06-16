@@ -2,3 +2,15 @@
 hermes_install_script_url: "https://hermes-agent.nousresearch.com/install.sh"
 hermes_home: "/home/{{ server_user }}/.hermes"
 hermes_bin: "/home/{{ server_user }}/.local/bin/hermes"
+
+# defaults/main.yml
+ufw_allowed_ports:
+  - "22"
+  - "80"
+  - "443"
+  - "3000"
+  - "8787"
+  - "9119"
+  - "5173"
+  - "6173"
+  - "9797"
