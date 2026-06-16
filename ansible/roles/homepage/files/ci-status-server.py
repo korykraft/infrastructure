@@ -25,7 +25,7 @@ def get_ci_status():
         with open(TOKEN_FILE) as f:
             token = f.read().strip()
     except FileNotFoundError:
-        return [{"title": "CI", "status": "no token"}]
+        return {"workflow": "CI", "status": "no token", "when": "-"}
 
     url = f"https://api.github.com/repos/{REPO}/actions/runs?branch={BRANCH}&per_page=3"
     req = urllib.request.Request(url, headers={
@@ -38,7 +38,7 @@ def get_ci_status():
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read())
     except Exception as e:
-        return [{"title": "CI", "status": f"API error: {e}"}]
+        return {"workflow": "CI", "status": f"API error: {e}", "when": "-"}
 
     results = []
     for run in data.get("workflow_runs", []):
@@ -58,11 +58,13 @@ def get_ci_status():
         })
 
     if not results:
-        results = [{"workflow": "pictubook-app", "status": "no runs"}]
+        result = {"workflow": "pictubook-app", "status": "no runs", "when": "-"}
+    else:
+        result = results[0]
 
-    _cache["data"] = results
+    _cache["data"] = result
     _cache["time"] = now
-    return results
+    return result
 
 
 class Handler(BaseHTTPRequestHandler):
