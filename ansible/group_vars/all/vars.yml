@@ -15,6 +15,7 @@ docker_root: "/home/{{ server_user }}/docker"
 # 8080  searxng_port / hermes gateway (manual — docker/hermes/)
 # 8787  stripe_instances forward target (host.docker.internal)
 # 8888  mem0_api_port
+# 9090  ci_status_port
 
 forgejo_ssh_port: 222
 
@@ -31,6 +32,7 @@ homepage_port: 3005
 homepage_allowed_hosts: "192.168.1.84:3005,ubuntu:3005"
 homepage_base_url: "http://192.168.1.84:3005"
 
+ci_status_port: 9090
 searxng_port: 8080
 
 mem0_api_port: 8888

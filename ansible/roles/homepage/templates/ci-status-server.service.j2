@@ -1,0 +1,14 @@
+[Unit]
+Description=Homepage CI Status Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/{{ server_user }}/scripts/ci-status-server.py
+Restart=always
+RestartSec=10
+Environment=PORT={{ ci_status_port }}
+
+[Install]
+WantedBy=default.target
