@@ -10,7 +10,7 @@
     # - docker
     # - forgejo
     # - syncthing
-    - hermes
+    # - hermes
     - homepage
     # - ai_tools
     # - desktop
