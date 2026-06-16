@@ -1,0 +1,67 @@
+---
+- name: Create homepage directory
+  ansible.builtin.file:
+    path: "{{ homepage_dir }}"
+    state: directory
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0755"
+
+- name: Create homepage config directory
+  ansible.builtin.file:
+    path: "{{ homepage_dir }}/config"
+    state: directory
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0755"
+
+- name: Copy homepage settings.yaml
+  ansible.builtin.template:
+    src: settings.yaml.j2
+    dest: "{{ homepage_dir }}/config/settings.yaml"
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0644"
+
+- name: Copy homepage bookmarks.yaml
+  ansible.builtin.template:
+    src: bookmarks.yaml.j2
+    dest: "{{ homepage_dir }}/config/bookmarks.yaml"
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0644"
+
+- name: Copy homepage services.yaml
+  ansible.builtin.template:
+    src: services.yaml.j2
+    dest: "{{ homepage_dir }}/config/services.yaml"
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0644"
+
+- name: Copy homepage docker.yaml
+  ansible.builtin.template:
+    src: docker.yaml.j2
+    dest: "{{ homepage_dir }}/config/docker.yaml"
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0644"
+
+- name: Copy homepage docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ homepage_dir }}/docker-compose.yml"
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0644"
+
+- name: Start homepage
+  community.docker.docker_compose_v2:
+    project_src: "{{ homepage_dir }}"
+    state: present
+
+- name: Allow homepage through UFW
+  ansible.builtin.command: ufw allow {{ homepage_port }}/tcp
+  register: homepage_ufw
+  changed_when: "'Rules updated' in homepage_ufw.stdout"
+  when: not (ansible_is_docker_test | default(false))

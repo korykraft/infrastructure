@@ -1,0 +1,20 @@
+---
+- Infrastructure:
+    - Forgejo:
+        icon: forgejo.svg
+        href: http://192.168.1.84:3000
+        description: Git hosting
+        widget:
+          type: forgejo
+          url: http://192.168.1.84:3000
+          key: "{{ homepage_forgejo_key | default('') }}"
+
+    - Hermes:
+        icon: si-robot
+        href: https://hermes-agent.nousresearch.com/docs
+        description: CLI AI Agent
+        widget:
+          type: customapi
+          url: http://{{ homepage_allowed_hosts }}/api/status
+          display: list
+          refreshInterval: 10000

@@ -2,13 +2,39 @@
 server_user: kory
 docker_root: "/home/{{ server_user }}/docker"
 
+# ── Port Registry ──────────────────────────────────────
+# Every host port used by a docker service goes here.
+# Keep sorted by port number. No port goes in two places.
+# docker/ manual services listed in comments for awareness.
+
+# 222   forgejo_ssh_port
+# 3000  forgejo_http_port
+# 3001  mem0_dashboard_port
+# 3005  homepage_port
+# 5678  n8n (manual — docker/n8n/)
+# 8080  searxng_port / hermes gateway (manual — docker/hermes/)
+# 8787  stripe_instances forward target (host.docker.internal)
+# 8888  mem0_api_port
+
+forgejo_ssh_port: 222
+
 forgejo_dir: "{{ docker_root }}/forgejo"
 forgejo_data_dir: "{{ forgejo_dir }}/forgejo"
-
 forgejo_http_port: 3000
-forgejo_ssh_port: 222
 forgejo_domain: "192.168.1.84"
 forgejo_root_url: "http://192.168.1.84:3000/"
+
+mem0_dashboard_port: 3001
+
+homepage_dir: "{{ docker_root }}/homepage"
+homepage_port: 3005
+homepage_allowed_hosts: "192.168.1.84:3005"
+
+searxng_port: 8080
+
+mem0_api_port: 8888
+
+# ── End Port Registry ─────────────────────────────────
 
 hermes_skills:
   - repo-stewardship

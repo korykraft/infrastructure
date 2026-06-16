@@ -1,7 +1,8 @@
 ---
 mem0_dir: "{{ docker_root }}/mem0"
-mem0_api_port: 8888
-mem0_dashboard_port: 3001
+# Ports are defined in group_vars/all/vars.yml:
+#   mem0_api_port: 8888
+#   mem0_dashboard_port: 3001
 
 mem0_postgres_user: postgres
 mem0_postgres_password: changeme
