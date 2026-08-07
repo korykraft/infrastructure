@@ -1,0 +1,41 @@
+name: hoppscotch
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hoppscotch-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: hoppscotch
+      POSTGRES_PASSWORD: "{{ hoppscotch_db_password }}"
+      POSTGRES_DB: hoppscotch
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hoppscotch"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - hoppscotch_pgdata:/var/lib/postgresql/data
+    networks:
+      - hoppscotch_network
+
+  hoppscotch:
+    image: hoppscotch/hoppscotch:latest
+    container_name: hoppscotch
+    restart: unless-stopped
+    ports:
+      - "{{ hoppscotch_port }}:80"
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - hoppscotch_network
+
+volumes:
+  hoppscotch_pgdata:
+
+networks:
+  hoppscotch_network:
+    driver: bridge

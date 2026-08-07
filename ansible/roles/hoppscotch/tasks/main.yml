@@ -1,0 +1,35 @@
+---
+- name: Create hoppscotch directory
+  ansible.builtin.file:
+    path: "{{ hoppscotch_dir }}"
+    state: directory
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0755"
+
+- name: Copy hoppscotch env file
+  ansible.builtin.template:
+    src: .env.j2
+    dest: "{{ hoppscotch_dir }}/.env"
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0600"
+
+- name: Copy hoppscotch docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ hoppscotch_dir }}/docker-compose.yml"
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0644"
+
+- name: Start hoppscotch
+  community.docker.docker_compose_v2:
+    project_src: "{{ hoppscotch_dir }}"
+    state: present
+
+- name: Allow hoppscotch through UFW
+  ansible.builtin.command: ufw allow {{ hoppscotch_port }}/tcp
+  register: hoppscotch_ufw
+  changed_when: "'Rules updated' in hoppscotch_ufw.stdout"
+  when: not (ansible_is_docker_test | default(false))

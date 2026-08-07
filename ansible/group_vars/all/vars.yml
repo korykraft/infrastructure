@@ -11,6 +11,7 @@ docker_root: "/home/{{ server_user }}/docker"
 # 3000  forgejo_http_port
 # 3001  mem0_dashboard_port
 # 3005  homepage_port
+# 3020  hoppscotch_port
 # 5678  n8n (manual — docker/n8n/)
 # 8080  searxng_port / hermes gateway (manual — docker/hermes/)
 # 8787  stripe_instances forward target (host.docker.internal)
@@ -36,6 +37,11 @@ ci_status_port: 9090
 searxng_port: 8080
 
 mem0_api_port: 8888
+
+hoppscotch_port: 3020
+hoppscotch_dir: "{{ docker_root }}/hoppscotch"
+hoppscotch_db_password: "hoppscotch_dev"
+hoppscotch_encryption_key: "f26dda16049f3a00f2a507e9e0416352"
 
 # ── End Port Registry ─────────────────────────────────
 
