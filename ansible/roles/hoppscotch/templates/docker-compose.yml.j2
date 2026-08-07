@@ -23,6 +23,7 @@ services:
     image: hoppscotch/hoppscotch:latest
     container_name: hoppscotch
     restart: unless-stopped
+    stop_grace_period: 30s
     ports:
       - "{{ hoppscotch_port }}:80"
     env_file:

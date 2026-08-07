@@ -28,6 +28,25 @@
     project_src: "{{ hoppscotch_dir }}"
     state: present
 
+- name: Wait for postgres healthy
+  ansible.builtin.command: docker compose -f {{ hoppscotch_dir }}/docker-compose.yml exec -T postgres pg_isready -U hoppscotch
+  register: pg_ready
+  until: pg_ready.rc == 0
+  retries: 15
+  delay: 2
+  changed_when: false
+
+- name: Run database migrations
+  ansible.builtin.command:
+    cmd: docker compose -f {{ hoppscotch_dir }}/docker-compose.yml run --rm -e NODE_OPTIONS="--max-old-space-size=512" hoppscotch pnpm exec prisma migrate deploy
+  register: hoppscotch_migrate
+  changed_when: "'successfully applied' in hoppscotch_migrate.stdout"
+
+- name: Start hoppscotch after migration
+  community.docker.docker_compose_v2:
+    project_src: "{{ hoppscotch_dir }}"
+    state: present
+
 - name: Allow hoppscotch through UFW
   ansible.builtin.command: ufw allow {{ hoppscotch_port }}/tcp
   register: hoppscotch_ufw
