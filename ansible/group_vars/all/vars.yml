@@ -11,6 +11,7 @@ docker_root: "/home/{{ server_user }}/docker"
 # 3000  forgejo_http_port
 # 3001  mem0_dashboard_port
 # 3005  homepage_port
+# 3006  kan web (manual — docker/kan/)
 # 3020  hoppscotch_port
 # 5678  n8n (manual — docker/n8n/)
 # 8080  searxng_port / hermes gateway (manual — docker/hermes/)
