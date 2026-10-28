@@ -1,0 +1,14 @@
+# roles/mcp_excalidraw/defaults/main.yml
+---
+mcp_excalidraw_user: "{{ ansible_user }}"
+mcp_excalidraw_home: "/home/{{ mcp_excalidraw_user }}"
+
+mcp_excalidraw_repo_url: "https://github.com/yctimlin/mcp_excalidraw.git"
+mcp_excalidraw_repo_path: "{{ mcp_excalidraw_home }}/workspace/agents/mcp_excalidraw"
+
+mcp_excalidraw_compose_dir: "{{ mcp_excalidraw_home }}/docker/mcp-excalidraw"
+
+mcp_excalidraw_canvas_port: "3030"
+mcp_excalidraw_container_port: "3000"
+mcp_excalidraw_bind_addr: "0.0.0.0"
+mcp_excalidraw_express_server_url: "http://127.0.0.1:3030"

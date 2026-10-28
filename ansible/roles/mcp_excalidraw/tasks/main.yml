@@ -1,0 +1,63 @@
+# roles/mcp_excalidraw/tasks/main.yml
+---
+- name: Ensure MCP Excalidraw directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ mcp_excalidraw_user }}"
+    group: "{{ mcp_excalidraw_user }}"
+    mode: "0755"
+  loop:
+    - "{{ mcp_excalidraw_compose_dir }}"
+    - "{{ mcp_excalidraw_home }}/workspace/agents"
+
+- name: Install MCP Excalidraw canvas compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ mcp_excalidraw_compose_dir }}/docker-compose.yml"
+    owner: "{{ mcp_excalidraw_user }}"
+    group: "{{ mcp_excalidraw_user }}"
+    mode: "0644"
+
+- name: Start MCP Excalidraw canvas
+  community.docker.docker_compose_v2:
+    project_src: "{{ mcp_excalidraw_compose_dir }}"
+    state: present
+
+- name: Clone MCP Excalidraw repo
+  ansible.builtin.git:
+    repo: "{{ mcp_excalidraw_repo_url }}"
+    dest: "{{ mcp_excalidraw_repo_path }}"
+    version: main
+    update: true
+  become: true
+  become_user: "{{ mcp_excalidraw_user }}"
+
+- name: Install MCP Excalidraw npm dependencies
+  ansible.builtin.command: npm ci
+  args:
+    chdir: "{{ mcp_excalidraw_repo_path }}"
+    creates: "{{ mcp_excalidraw_repo_path }}/node_modules"
+  become: true
+  become_user: "{{ mcp_excalidraw_user }}"
+
+- name: Build MCP Excalidraw server
+  ansible.builtin.command: npm run build
+  args:
+    chdir: "{{ mcp_excalidraw_repo_path }}"
+  become: true
+  become_user: "{{ mcp_excalidraw_user }}"
+
+- name: Install Hermes MCP config snippet
+  ansible.builtin.template:
+    src: hermes-mcp-excalidraw.json.j2
+    dest: "{{ mcp_excalidraw_home }}/workspace/agents/mcp-excalidraw.hermes.json"
+    owner: "{{ mcp_excalidraw_user }}"
+    group: "{{ mcp_excalidraw_user }}"
+    mode: "0644"
+
+- name: Allow MCP Excalidraw canvas from LAN
+  community.general.ufw:
+    rule: allow
+    port: "{{ mcp_excalidraw_canvas_port }}"
+    proto: tcp

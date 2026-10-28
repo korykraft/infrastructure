@@ -1,0 +1,17 @@
+// roles/mcp_excalidraw/templates/hermes-mcp-excalidraw.json.j2
+{
+  "mcp": {
+    "excalidraw": {
+      "type": "local",
+      "command": [
+        "node",
+        "{{ mcp_excalidraw_repo_path }}/dist/index.js"
+      ],
+      "enabled": true,
+      "environment": {
+        "EXPRESS_SERVER_URL": "{{ mcp_excalidraw_express_server_url }}",
+        "ENABLE_CANVAS_SYNC": "true"
+      }
+    }
+  }
+}
