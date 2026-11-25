@@ -18,6 +18,7 @@ from urllib.parse import urlparse
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.environ.get("CONFIG_FILE", "/config/services.json")
 BOOKMARKS_FILE = os.environ.get("BOOKMARKS_FILE", "/data/bookmarks.json")
+SERVICE_GROUPS_FILE = os.environ.get("SERVICE_GROUPS_FILE", "/data/service-groups.json")
 BACKUPS_DIR = os.environ.get("BACKUPS_DIR", "/backups")
 DOCKER_SOCK = os.environ.get("DOCKER_SOCK", "/var/run/docker.sock")
 CHECK_HOST = os.environ.get("CHECK_HOST", "host.docker.internal")
@@ -57,11 +58,12 @@ def load_config():
         with open(CONFIG_FILE) as f:
             cfg = json.load(f)
     except (OSError, ValueError) as e:
-        return {"services": {}, "extras": [], "hidden": [], "error": f"services.json could not be read: {e}"}
+        return {"services": {}, "extras": [], "hidden": [], "link_host": "", "error": f"services.json could not be read: {e}"}
     return {
         "services": cfg.get("services") or {},
         "extras": cfg.get("extras") or [],
         "hidden": cfg.get("hidden") or [],
+        "link_host": cfg.get("link_host") or "",
     }
 
 
@@ -101,7 +103,8 @@ def summarize_container(c):
 
 def build_status():
     cfg = load_config()
-    result = {"generated": time.time(), "services": [], "config_error": cfg.get("error"), "docker_error": None}
+    result = {"generated": time.time(), "services": [], "config_error": cfg.get("error"), "docker_error": None,
+              "link_host": cfg["link_host"]}
 
     projects = {}
     try:
@@ -202,9 +205,9 @@ def get_status():
 _bookmarks_lock = threading.Lock()
 
 
-def load_bookmarks():
+def load_doc(path):
     try:
-        with open(BOOKMARKS_FILE) as f:
+        with open(path) as f:
             return json.load(f)
     except FileNotFoundError:
         return {"groups": []}
@@ -254,17 +257,50 @@ def clean_bookmarks(doc):
     return {"groups": groups}
 
 
-def save_bookmarks(doc):
-    tmp = f"{BOOKMARKS_FILE}.{uuid.uuid4().hex[:8]}.tmp"
+def clean_service_groups(doc):
+    """Groups of services. A service is named by its id and sits in one group at most."""
+    if not isinstance(doc, dict) or not isinstance(doc.get("groups"), list):
+        raise ValueError("Expected a list of groups")
+    if len(doc["groups"]) > MAX_GROUPS:
+        raise ValueError(f"No more than {MAX_GROUPS} groups")
+    groups, seen_ids, placed = [], set(), set()
+    for g in doc["groups"]:
+        if not isinstance(g, dict) or not isinstance(g.get("services", []), list):
+            raise ValueError("A group is malformed")
+        gid = g.get("id")
+        if not (isinstance(gid, str) and re.fullmatch(r"[A-Za-z0-9-]{4,40}", gid) and gid not in seen_ids):
+            gid = uuid.uuid4().hex[:12]
+        seen_ids.add(gid)
+        services = []
+        for s in g.get("services", []):
+            if not isinstance(s, str) or not 0 < len(s) <= 200:
+                raise ValueError("A service in a group is malformed")
+            if s not in placed:
+                placed.add(s)
+                services.append(s)
+        if len(placed) > MAX_BOOKMARKS:
+            raise ValueError("Too many services in groups")
+        groups.append({"id": gid, "name": clean_text(g.get("name"), "Group"), "services": services})
+    return {"groups": groups}
+
+
+def save_doc(path, doc):
+    tmp = f"{path}.{uuid.uuid4().hex[:8]}.tmp"
     with open(tmp, "w") as f:
         json.dump(doc, f, indent=2, ensure_ascii=False)
         f.write("\n")
         f.flush()
         os.fsync(f.fileno())
-    os.replace(tmp, BOOKMARKS_FILE)
+    os.replace(tmp, path)
 
 
 # ── HTTP ─────────────────────────────────────────────────────────────────────
+
+# What the page may read and replace: address -> (file, validator)
+STORES = {
+    "/api/bookmarks": (BOOKMARKS_FILE, clean_bookmarks),
+    "/api/service-groups": (SERVICE_GROUPS_FILE, clean_service_groups),
+}
 
 class Handler(BaseHTTPRequestHandler):
     server_version = "homelab-dashboard"
@@ -295,18 +331,21 @@ class Handler(BaseHTTPRequestHandler):
             self.send_body(200, b"ok", "text/plain")
         elif path == "/api/status":
             self.send_json(200, get_status())
-        elif path == "/api/bookmarks":
+        elif path in STORES:
+            file, _ = STORES[path]
             try:
-                self.send_json(200, load_bookmarks())
+                self.send_json(200, load_doc(file))
             except (OSError, ValueError) as e:
-                self.send_json(500, {"error": f"bookmarks.json could not be read: {e}"})
+                self.send_json(500, {"error": f"{os.path.basename(file)} could not be read: {e}"})
         else:
             self.send_json(404, {"error": "Not found"})
 
     def do_PUT(self):
-        if urlparse(self.path).path != "/api/bookmarks":
+        store = STORES.get(urlparse(self.path).path)
+        if not store:
             return self.send_json(404, {"error": "Not found"})
-        # Requiring JSON keeps other websites from changing bookmarks via a form post.
+        file, clean = store
+        # Requiring JSON keeps other websites from changing things via a form post.
         if self.headers.get("Content-Type", "").split(";")[0].strip() != "application/json":
             return self.send_json(415, {"error": "Send JSON"})
         try:
@@ -316,14 +355,14 @@ class Handler(BaseHTTPRequestHandler):
         if not 0 < length <= 2_000_000:
             return self.send_json(413, {"error": "Too large"})
         try:
-            doc = clean_bookmarks(json.loads(self.rfile.read(length)))
+            doc = clean(json.loads(self.rfile.read(length)))
         except ValueError as e:
             return self.send_json(400, {"error": str(e)})
         try:
             with _bookmarks_lock:
-                save_bookmarks(doc)
+                save_doc(file, doc)
         except OSError as e:
-            return self.send_json(500, {"error": f"Could not write bookmarks.json: {e}"})
+            return self.send_json(500, {"error": f"Could not write {os.path.basename(file)}: {e}"})
         self.send_json(200, doc)
 
 

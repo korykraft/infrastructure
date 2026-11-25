@@ -80,9 +80,15 @@ restore_forgejo() {
 }
 
 restore_dashboard() {
-  [[ -f "$SRC/dashboard/bookmarks.json" ]] || { log "no bookmarks in this backup"; return 0; }
+  local f
   mkdir -p "$DOCKER_DIR/dashboard/data"
-  cp "$SRC/dashboard/bookmarks.json" "$DOCKER_DIR/dashboard/data/bookmarks.json"
+  for f in bookmarks.json service-groups.json; do
+    if [[ -f "$SRC/dashboard/$f" ]]; then
+      cp "$SRC/dashboard/$f" "$DOCKER_DIR/dashboard/data/$f"
+    else
+      log "no $f in this backup"
+    fi
+  done
 }
 
 case "$WHAT" in

@@ -88,10 +88,12 @@ backup_forgejo() {
 
 backup_dashboard() {
   mkdir -p "$work/dashboard"
-  local src="$DOCKER_DIR/dashboard/data/bookmarks.json"
-  # No file yet just means no bookmarks have been added.
-  [[ -f "$src" ]] || return 0
-  cp "$src" "$work/dashboard/bookmarks.json"
+  local f
+  # A missing file just means nothing has been added on the page yet.
+  for f in bookmarks.json service-groups.json; do
+    [[ -f "$DOCKER_DIR/dashboard/data/$f" ]] && cp "$DOCKER_DIR/dashboard/data/$f" "$work/dashboard/$f"
+  done
+  return 0
 }
 
 backup_env() {

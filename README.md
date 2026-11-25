@@ -69,6 +69,9 @@ A small Python app with no dependencies, in `docker/dashboard/`.
   `docker/dashboard/config/services.json`. Edit it to name a new stack, add a
   check for something outside Docker (`extras`), or hide a project (`hidden`).
   Changes apply within seconds.
+- **Service groups** are made on the page: Add group under Services, then
+  Edit to pick a group for each service. Stored in
+  `docker/dashboard/data/service-groups.json`, which is backed up.
 - **Bookmarks** are added, grouped, reordered and deleted on the page itself
   and stored in `docker/dashboard/data/bookmarks.json`, which is backed up.
 - It has no login, like the other services here: anyone on the home network

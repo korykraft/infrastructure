@@ -1,5 +1,6 @@
 {
-  "_help": "Keys under services are compose project names. port + path is the address the dashboard checks and links to. Stacks not listed here still appear, judged by container state only. Changes apply within a few seconds, no restart needed.",
+  "_help": "Keys under services are compose project names. port + path is the address the dashboard checks and links to. Stacks not listed here still appear, judged by container state only. link_host is the address service links point at, so they still work when the dashboard is opened through a proxy such as http://home. Changes apply within a few seconds, no restart needed.",
+  "link_host": "192.168.1.84",
   "services": {
     "vaultwarden":    { "name": "Vaultwarden",  "about": "Passwords",                 "port": 8088, "path": "/alive", "open": "/" },
     "kan":            { "name": "Kan",          "about": "Boards",                    "port": 3006 },

@@ -69,6 +69,14 @@ a.svc-name:hover { color: var(--link); }
 .degraded .svc-meta { color: var(--lamp-warn); font-weight: 600; }
 .stopped .svc-name { font-weight: 500; color: var(--ink-soft); }
 .subhead { margin: 30px 0 0; padding-bottom: 8px; border-bottom: 1px solid var(--ink-soft); color: var(--ink-soft); font-size: 0.93rem; font-weight: 600; }
+.subhead.named { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; color: var(--ink); }
+.subhead.named h3 { margin: 0; font-size: inherit; font-weight: 600; flex: 1 1 auto; }
+.subhead .count { color: var(--ink-soft); font-weight: 400; margin-left: 8px; }
+.head-right { display: flex; align-items: baseline; gap: 16px; }
+.group-empty { margin: 0; padding: 11px 0; border-bottom: 1px solid var(--rule); color: var(--ink-soft); font-size: 0.93rem; }
+.svc-move { grid-column: 2 / -1; display: none; margin-top: 6px; font-size: 0.9rem; color: var(--ink-soft); }
+.editing .svc-move { display: block; }
+.svc-move select { margin-left: 8px; font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 3px 6px; max-width: 100%; }
 
 /* Bookmarks */
 .plain { background: none; border: 0; padding: 0; color: var(--link); }
@@ -112,13 +120,10 @@ dialog p { margin: 0 0 4px; }
   <div id="notices"></div>
 
   <div class="columns">
-    <section aria-labelledby="svc-h">
-      <div class="head"><h2 id="svc-h">Services</h2><span class="aside" id="checked"></span></div>
-      <ul class="rows" id="active"></ul>
-      <div id="stopped-wrap" hidden>
-        <p class="subhead">Stopped</p>
-        <ul class="rows" id="stopped"></ul>
-      </div>
+    <section aria-labelledby="svc-h" id="services">
+      <div class="head"><h2 id="svc-h">Services</h2><span class="head-right"><span class="aside" id="checked"></span><button class="plain" id="svc-edit" aria-pressed="false" hidden>Edit</button></span></div>
+      <div id="svc-list"></div>
+      <button class="plain add-group" id="add-svc-group">Add group</button>
     </section>
 
     <section aria-labelledby="bm-h" id="bookmarks">
@@ -156,7 +161,11 @@ const el = (tag, props = {}, ...kids) => {
 };
 
 /* ── Services ─────────────────────────────────────────────── */
-const ORDER = { down: 0, degraded: 1, up: 2 };
+const ORDER = { down: 0, degraded: 1, up: 2, stopped: 3 };
+const byState = (a, b) => ORDER[a.state] - ORDER[b.state] || a.name.localeCompare(b.name);
+let status = null;               // latest answer from /api/status
+let svcDoc = { groups: [] };     // service groups: [{ id, name, services: [service id] }]
+let svcEditing = false;
 const list = (names) => names.length < 2 ? names.join("") : names.slice(0, -1).join(", ") + " and " + names[names.length - 1];
 
 function ago(epoch) {
@@ -167,9 +176,9 @@ function ago(epoch) {
   return Math.round(s / 86400) + " days ago";
 }
 
-function serviceRow(s) {
+function serviceRow(s, host) {
   const port = s.open_port || s.port;
-  const href = port ? `http://${location.hostname}:${port}${s.open || "/"}` : null;
+  const href = port ? `http://${host}:${port}${s.open || "/"}` : null;
   const name = href ? el("a", { class: "svc-name", href }, s.name) : el("span", { class: "svc-name" }, s.name);
   let meta = "";
   if (s.state === "down") meta = "Not answering";
@@ -180,10 +189,92 @@ function serviceRow(s) {
     el("span", {}, name, s.about ? el("span", { class: "svc-about" }, s.about) : null),
     el("span", { class: "svc-meta" }, meta));
   if (s.detail) li.append(el("span", { class: "svc-detail" }, s.detail));
+  if (svcDoc.groups.length) {
+    const current = svcDoc.groups.find((g) => g.services.includes(s.id));
+    const select = el("select", { "aria-label": `Group for ${s.name}`, onchange: (e) => moveService(s.id, e.target.value) },
+      el("option", { value: "", selected: !current }, "No group"),
+      ...svcDoc.groups.map((g) => el("option", { value: g.id, selected: g === current }, g.name)));
+    li.append(el("label", { class: "svc-move" }, "Group", select));
+  }
   return li;
 }
 
+function renderServices() {
+  if (!status) return;
+  const host = status.link_host || location.hostname;
+  const rows = (items) => el("ul", { class: "rows" }, ...items.map((s) => serviceRow(s, host)));
+  const groups = svcDoc.groups;
+  const grouped = new Set(groups.flatMap((g) => g.services));
+  const loose = status.services.filter((s) => !grouped.has(s.id));
+  const looseActive = loose.filter((s) => s.state !== "stopped").sort(byState);
+  const looseStopped = loose.filter((s) => s.state === "stopped").sort(byState);
+  const parts = [];
+
+  groups.forEach((g, gi) => {
+    const items = status.services.filter((s) => g.services.includes(s.id)).sort(byState);
+    parts.push(el("div", { class: "subhead named" },
+      el("h3", {}, g.name, el("span", { class: "count" }, String(items.length))),
+      el("span", { class: "tools" },
+        tool("↑", `Move ${g.name} up`, () => changeSvc((d) => move(d.groups, gi, -1)), gi === 0),
+        tool("↓", `Move ${g.name} down`, () => changeSvc((d) => move(d.groups, gi, 1)), gi === groups.length - 1),
+        tool("Rename", `Rename ${g.name}`, () => svcGroupDialog(gi)),
+        tool("Delete", `Delete ${g.name}`, () => deleteSvcGroupDialog(gi)))));
+    parts.push(items.length ? rows(items)
+      : el("p", { class: "group-empty" }, svcEditing ? "Empty. Pick this group on a service below to move it here." : "Empty. Choose Edit to move services here."));
+  });
+  if (looseActive.length) {
+    if (groups.length) parts.push(el("p", { class: "subhead" }, "Not in a group"));
+    parts.push(rows(looseActive));
+  }
+  if (looseStopped.length) parts.push(el("p", { class: "subhead" }, "Stopped"), rows(looseStopped));
+
+  $("svc-list").replaceChildren(...parts);
+  $("services").classList.toggle("editing", svcEditing);
+  const toggle = $("svc-edit");
+  toggle.hidden = !groups.length;
+  toggle.textContent = svcEditing ? "Done" : "Edit";
+  toggle.setAttribute("aria-pressed", svcEditing);
+}
+
+async function changeSvc(mutate) {
+  const next = structuredClone(svcDoc);
+  mutate(next);
+  const r = await fetch("/api/service-groups", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(next) });
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(body.error || `The server answered ${r.status}`);
+  svcDoc = body;
+  if (!svcDoc.groups.length) svcEditing = false;
+  renderServices();
+}
+
+const moveService = (id, groupId) => changeSvc((d) => {
+  for (const g of d.groups) g.services = g.services.filter((x) => x !== id);
+  const target = d.groups.find((g) => g.id === groupId);
+  if (target) target.services.push(id);
+});
+
+function svcGroupDialog(gi) {
+  const g = gi === null ? null : svcDoc.groups[gi];
+  openDialog(g ? "Rename group" : "Add service group", g ? "Rename group" : "Add group",
+    [field("Name", "f-name", g && g.name, { maxlength: 80, placeholder: g ? null : "Such as Apps, Tools or Projects" })],
+    async () => {
+      const name = $("f-name").value.trim();
+      if (!name) throw new Error("Give the group a name.");
+      await changeSvc((d) => { if (g) d.groups[gi].name = name; else d.groups.push({ name, services: [] }); });
+      if (!g) { svcEditing = true; renderServices(); }   // ready to move services in
+    });
+}
+
+function deleteSvcGroupDialog(gi) {
+  const g = svcDoc.groups[gi];
+  if (!g.services.length) return changeSvc((d) => d.groups.splice(gi, 1));
+  openDialog(`Delete ${g.name}?`, "Delete group",
+    [el("p", {}, "Its services stay on the page and go back to having no group.")],
+    () => changeSvc((d) => d.groups.splice(gi, 1)), true);
+}
+
 function renderStatus(data) {
+  status = data;
   const active = data.services.filter((s) => s.state !== "stopped")
     .sort((a, b) => ORDER[a.state] - ORDER[b.state] || a.name.localeCompare(b.name));
   const stopped = data.services.filter((s) => s.state === "stopped").sort((a, b) => a.name.localeCompare(b.name));
@@ -211,9 +302,8 @@ function renderStatus(data) {
   const notices = [data.docker_error, data.config_error].filter(Boolean);
   $("notices").replaceChildren(...notices.map((n) => el("p", { class: "notice" }, n)));
 
-  $("active").replaceChildren(...active.map(serviceRow));
-  $("stopped").replaceChildren(...stopped.map(serviceRow));
-  $("stopped-wrap").hidden = !stopped.length;
+  // Leave the rows alone while a group is being picked, or the menu would close.
+  if (!(document.activeElement && document.activeElement.closest(".svc-move"))) renderServices();
   $("checked").textContent = "Checked " + new Date(data.generated * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
@@ -357,6 +447,8 @@ function bookmarkDialog(gi, bi) {
 }
 
 $("add-group").addEventListener("click", () => groupDialog(null));
+$("add-svc-group").addEventListener("click", () => svcGroupDialog(null));
+$("svc-edit").addEventListener("click", () => { svcEditing = !svcEditing; renderServices(); });
 $("edit-toggle").addEventListener("click", () => { editing = !editing; renderBookmarks(); });
 
 async function loadBookmarks() {
@@ -374,7 +466,14 @@ async function loadBookmarks() {
 /* The inline tools call change() without a dialog; report failures there too. */
 window.addEventListener("unhandledrejection", (e) => { e.preventDefault(); alert("Not saved. " + (e.reason && e.reason.message || e.reason)); });
 
-refreshStatus();
+async function loadServiceGroups() {
+  try {
+    const r = await fetch("/api/service-groups");
+    if (r.ok) { svcDoc = await r.json(); renderServices(); }
+  } catch (e) { /* services still show, ungrouped */ }
+}
+
+loadServiceGroups().then(refreshStatus);
 loadBookmarks();
 setInterval(() => { if (!document.hidden) refreshStatus(); }, 15000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshStatus(); });
