@@ -1,5 +1,31 @@
 .DS_Store
-.env
 *.log
 *.tar.gz
 ansible/.vault_pass
+
+# Secrets never go in git. Each stack has a .env.example listing the keys.
+.env
+
+# docker/ is the live stacks directory (~/docker symlinks here), so it also
+# holds service data. Track only compose files and named config files.
+/docker/**
+!/docker/**/
+!/docker/**/docker-compose.yml
+!/docker/**/.env.example
+!/docker/searxng/settings.yml
+!/docker/dashboard/app/**
+!/docker/dashboard/config/**
+
+# Service data and nested checkouts.
+/docker/dockge/data/
+/docker/forgejo/forgejo/
+/docker/mem0/history/
+/docker/mem0/source/
+/docker/vaultwarden/data/
+/docker/dashboard/data/
+__pycache__/
+
+# Retired stacks whose files are still on disk.
+/docker/homepage/
+/docker/hoppscotch/
+/docker/pihole/

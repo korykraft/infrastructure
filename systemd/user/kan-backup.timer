@@ -1,0 +1,10 @@
+[Unit]
+Description=Nightly Kan database snapshot
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+# The VM is not always on at night: run a missed snapshot at next boot.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

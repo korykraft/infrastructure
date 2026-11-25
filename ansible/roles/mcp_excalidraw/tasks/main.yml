@@ -1,5 +1,6 @@
-# roles/mcp_excalidraw/tasks/main.yml
 ---
+# The canvas container is the mcp-excalidraw stack in docker/; this role only
+# builds the MCP server that talks to it and wires it into Hermes.
 - name: Ensure MCP Excalidraw directories exist
   ansible.builtin.file:
     path: "{{ item }}"
@@ -8,21 +9,7 @@
     group: "{{ mcp_excalidraw_user }}"
     mode: "0755"
   loop:
-    - "{{ mcp_excalidraw_compose_dir }}"
     - "{{ mcp_excalidraw_home }}/workspace/agents"
-
-- name: Install MCP Excalidraw canvas compose file
-  ansible.builtin.template:
-    src: docker-compose.yml.j2
-    dest: "{{ mcp_excalidraw_compose_dir }}/docker-compose.yml"
-    owner: "{{ mcp_excalidraw_user }}"
-    group: "{{ mcp_excalidraw_user }}"
-    mode: "0644"
-
-- name: Start MCP Excalidraw canvas
-  community.docker.docker_compose_v2:
-    project_src: "{{ mcp_excalidraw_compose_dir }}"
-    state: present
 
 - name: Clone MCP Excalidraw repo
   ansible.builtin.git:

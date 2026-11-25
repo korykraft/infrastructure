@@ -1,0 +1,53 @@
+name: kan
+
+# Adapted from https://github.com/kanbn/kan/blob/main/docker-compose.yml (prebuilt images, no optional integrations).
+services:
+  migrate:
+    image: ghcr.io/kanbn/kan-migrate:0.6.0
+    container_name: kan-migrate
+    env_file:
+      - .env
+    networks:
+      - kan-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  web:
+    image: ghcr.io/kanbn/kan:0.6.0
+    container_name: kan-web
+    ports:
+      - "3006:3000"
+    env_file:
+      - .env
+    networks:
+      - kan-network
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15
+    container_name: kan-db
+    environment:
+      POSTGRES_DB: kan_db
+      POSTGRES_USER: kan
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - kan_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kan -d kan_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - kan-network
+
+networks:
+  kan-network:
+
+volumes:
+  kan_postgres_data:

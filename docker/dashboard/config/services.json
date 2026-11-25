@@ -1,0 +1,23 @@
+{
+  "_help": "Keys under services are compose project names. port + path is the address the dashboard checks and links to. Stacks not listed here still appear, judged by container state only. Changes apply within a few seconds, no restart needed.",
+  "services": {
+    "vaultwarden":    { "name": "Vaultwarden",  "about": "Passwords",                 "port": 8088, "path": "/alive", "open": "/" },
+    "kan":            { "name": "Kan",          "about": "Boards",                    "port": 3006 },
+    "penpot":         { "name": "Penpot",       "about": "Design",                    "port": 9001 },
+    "mem0":           { "name": "mem0",         "about": "Agent memory, uses Ollama", "port": 8888, "path": "/docs", "open_port": 3001 },
+    "ollama":         { "name": "Ollama",       "about": "Local models, CPU only",    "port": 11434, "path": "/api/version" },
+    "forgejo":        { "name": "Forgejo",      "about": "Git hosting",               "port": 3000 },
+    "dockge":         { "name": "Dockge",       "about": "Manage stacks",             "port": 5001 },
+    "kanboard":       { "name": "Kanboard",     "about": "Boards",                    "port": 3040 },
+    "searxng":        { "name": "SearXNG",      "about": "Search",                    "port": 8080, "path": "/healthz", "open": "/" },
+    "mcp-excalidraw": { "name": "Excalidraw",   "about": "Canvas for the MCP server", "port": 3030, "path": "/health", "open": "/" },
+    "stripe":         { "name": "Stripe listener",              "about": "Webhooks to port 8787" },
+    "pictubook-vm":   { "name": "Stripe listener, Pictubook",   "about": "Webhooks to port 8787" },
+    "finance":        { "name": "Personal finance", "about": "Project",          "port": 8000 },
+    "mogg":           { "name": "mogg database",    "about": "Project Postgres" }
+  },
+  "extras": [
+    { "id": "hermes", "name": "Hermes", "about": "Agent dashboard, not in Docker", "port": 9119 }
+  ],
+  "hidden": ["dashboard", "hermes-a0dd196e"]
+}

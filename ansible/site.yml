@@ -1,24 +1,28 @@
 ---
-- name: Configure homelab server
+# Run one part with a tag, e.g. `just play --tags stacks`.
+
+- name: Set up the host
   hosts: homelab
   become: true
+  tags: [host]
   roles:
-    # - base
-    # - node
-    # - uv
-    # - git
-    # - docker
-    # - forgejo
-    # - syncthing
-    # - hermes
-    - homepage
-    - hoppscotch
-    - mcp_excalidraw
-    # - ai_tools
-    # - desktop
-    # - hermes_skills
-    # - wezterm
-    # - stripe
-    # - searxng
-    # - mem0
-    # - ai_tools
+    - { role: base, tags: [base] }
+    - { role: node, tags: [node] }
+    - { role: uv, tags: [uv] }
+    - { role: git, tags: [git] }
+    - { role: docker, tags: [docker] }
+    # Not in use. Uncomment to install and start Syncthing again.
+    # - { role: syncthing, tags: [syncthing] }
+    - { role: desktop, tags: [desktop] }
+    - { role: wezterm, tags: [wezterm] }
+    - { role: ai_tools, tags: [ai_tools] }
+    - { role: hermes, tags: [hermes] }
+    - { role: hermes_skills, tags: [hermes, hermes_skills] }
+
+- name: Deploy docker stacks
+  hosts: homelab
+  become: true
+  tags: [stacks]
+  roles:
+    - { role: stacks, tags: [stacks] }
+    - { role: mcp_excalidraw, tags: [mcp_excalidraw] }

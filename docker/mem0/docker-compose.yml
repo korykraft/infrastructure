@@ -1,0 +1,67 @@
+name: mem0
+
+services:
+  mem0:
+    build:
+      context: /home/kory/docker/mem0/source/server
+      dockerfile: Dockerfile
+    container_name: mem0
+    restart: unless-stopped
+    # Apply database migrations before starting; without this the API has no tables.
+    command: ["sh", "-c", "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"]
+    ports:
+      - "8888:8000"
+    env_file:
+      - .env
+    # Reach the ollama stack on the host's published port.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./history:/app/history
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - mem0_network
+
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: mem0-postgres
+    restart: unless-stopped
+    shm_size: "128mb"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -q -d postgres -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_db:/var/lib/postgresql/data
+      - /home/kory/docker/mem0/source/server/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    networks:
+      - mem0_network
+
+  mem0-dashboard:
+    build:
+      context: /home/kory/docker/mem0/source/server/dashboard
+    container_name: mem0-dashboard
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://192.168.1.84:8888
+      - API_INTERNAL_URL=http://mem0:8000
+      - NEXT_PUBLIC_INSTANCE_NAME=Mem0
+    depends_on:
+      - mem0
+    networks:
+      - mem0_network
+
+volumes:
+  postgres_db:
+
+networks:
+  mem0_network:
+    driver: bridge

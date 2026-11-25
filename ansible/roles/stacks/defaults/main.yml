@@ -1,0 +1,61 @@
+---
+infra_repo_url: "git@github.com:korykraft/infrastructure.git"
+infra_repo_dir: "/home/{{ server_user }}/workspace/infrastructure"
+
+# Stacks that should be up. Paths are relative to docker/ in this repo.
+# A stack that is in the repo but not listed here (forgejo, stripe/pictubook-local)
+# is kept on disk and left in whatever state it is in.
+stacks_running:
+  - dashboard
+  - dockge
+  - kan
+  - kanboard
+  - mcp-excalidraw
+  - mem0
+  - ollama
+  - penpot
+  - searxng
+  - stripe
+  - stripe/pictubook-vm
+  - vaultwarden
+
+# .env files written from vault values. An entry is skipped until every
+# variable in `needs` is defined, so a stack whose secrets are not in the
+# vault yet keeps its hand-made .env.
+stacks_env:
+  - stack: mem0
+    template: mem0.env.j2
+    needs: [mem0_postgres_password, mem0_jwt_secret]
+  - stack: searxng
+    template: searxng.env.j2
+    needs: [searxng_secret_key]
+  - stack: kan
+    template: kan.env.j2
+    needs: [kan_better_auth_secret, kan_postgres_password]
+  - stack: penpot
+    template: penpot.env.j2
+    needs: [penpot_secret_key, penpot_database_password]
+
+# Host ports opened in UFW for LAN access.
+stacks_ufw_ports:
+  - "{{ mem0_dashboard_port }}"
+  - "{{ mem0_api_port }}"
+  - "{{ searxng_port }}"
+
+# Tested mem0 commit; the stack builds from this checkout.
+mem0_source_version: "8096993d69396bf97311249206915cadb2eb998f"
+# Models mem0 needs from the ollama stack.
+ollama_models:
+  - nomic-embed-text
+  - qwen2.5:3b
+
+mem0_postgres_user: postgres
+mem0_admin_api_key: ""
+mem0_openai_api_key: ""
+mem0_anthropic_api_key: ""
+mem0_telemetry: "false"
+mem0_openai_base_url: "http://host.docker.internal:11434/v1"
+mem0_llm_model: "qwen2.5:3b"
+mem0_embedder_model: "nomic-embed-text"
+
+kan_base_url: "http://kan"

@@ -1,0 +1,10 @@
+[Unit]
+Description=Nightly homelab service data backup
+
+[Timer]
+OnCalendar=*-*-* 03:30:00
+# The VM is not always on at night: run a missed backup at next boot.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -2,49 +2,10 @@
 server_user: kory
 docker_root: "/home/{{ server_user }}/docker"
 
-# ── Port Registry ──────────────────────────────────────
-# Every host port used by a docker service goes here.
-# Keep sorted by port number. No port goes in two places.
-# docker/ manual services listed in comments for awareness.
-
-# 222   forgejo_ssh_port
-# 3000  forgejo_http_port
-# 3001  mem0_dashboard_port
-# 3005  homepage_port
-# 3006  kan web (manual — docker/kan/)
-# 3020  hoppscotch_port
-# 5678  n8n (manual — docker/n8n/)
-# 8080  searxng_port / hermes gateway (manual — docker/hermes/)
-# 8787  stripe_instances forward target (host.docker.internal)
-# 8888  mem0_api_port
-# 9090  ci_status_port
-
-forgejo_ssh_port: 222
-
-forgejo_dir: "{{ docker_root }}/forgejo"
-forgejo_data_dir: "{{ forgejo_dir }}/forgejo"
-forgejo_http_port: 3000
-forgejo_domain: "192.168.1.84"
-forgejo_root_url: "http://192.168.1.84:3000/"
-
+# Host ports that roles need to know about. The full port table is in README.md.
 mem0_dashboard_port: 3001
-
-homepage_dir: "{{ docker_root }}/homepage"
-homepage_port: 3005
-homepage_allowed_hosts: "192.168.1.84:3005,ubuntu:3005"
-homepage_base_url: "http://192.168.1.84:3005"
-
-ci_status_port: 9090
-searxng_port: 8080
-
 mem0_api_port: 8888
-
-hoppscotch_port: 3020
-hoppscotch_dir: "{{ docker_root }}/hoppscotch"
-hoppscotch_db_password: "hoppscotch_dev"
-hoppscotch_encryption_key: "f26dda16049f3a00f2a507e9e0416352"
-
-# ── End Port Registry ─────────────────────────────────
+searxng_port: 8080
 
 hermes_skills:
   - repo-stewardship
@@ -60,8 +21,6 @@ stripe_instances:
   - name: pictubook-vm
     api_key: "{{ stripe_test_secret_key }}"
     forward_to: "http://host.docker.internal:8787/v1/stripe/webhook"
-    enabled: true
-  # - name: pictubook-local
-  #   api_key: "{{ stripe_test_secret_key }}"
-  #   forward_to: "http://192.168.1.201:8787/v1/stripe/webhook"
-  #   enabled: false
+  - name: pictubook-local
+    api_key: "{{ stripe_test_secret_key }}"
+    forward_to: "http://192.168.1.201:8787/v1/stripe/webhook"

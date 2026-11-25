@@ -1,0 +1,6 @@
+[Unit]
+Description=Snapshot the Kan database into a local git repo
+
+[Service]
+Type=oneshot
+ExecStart=%h/workspace/infrastructure/scripts/kan-backup.sh

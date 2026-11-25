@@ -1,0 +1,16 @@
+name: dockge
+
+services:
+  dockge:
+    image: louislam/dockge:1
+    container_name: dockge
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/app/data
+      # Stacks path must be identical inside and outside the container.
+      - "/home/kory/docker:/home/kory/docker"
+    environment:
+      DOCKGE_STACKS_DIR: "/home/kory/docker"

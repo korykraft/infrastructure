@@ -1,0 +1,30 @@
+name: dashboard
+
+# Home page for the homelab: live status of every stack plus editable bookmarks.
+# The app is plain Python with no dependencies, mounted from ./app (no build).
+services:
+  dashboard:
+    image: python:3.13-alpine
+    container_name: dashboard
+    restart: unless-stopped
+    # Run as kory so data/bookmarks.json stays owned by kory.
+    user: "1000:1000"
+    # Host docker group, needed to read container status from the socket.
+    group_add:
+      - "988"
+    command: ["python", "-u", "/app/server.py"]
+    ports:
+      - "3005:3005"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./app:/app:ro
+      - ./config:/config:ro
+      - ./data:/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /home/kory/backups/homelab:/backups:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3005/healthz', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

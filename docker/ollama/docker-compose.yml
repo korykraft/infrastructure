@@ -1,0 +1,18 @@
+name: ollama
+
+# Local models for mem0 (and anything else on the LAN). CPU only: the VM has no GPU.
+services:
+  ollama:
+    image: ollama/ollama:0.40.18
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    environment:
+      # Keep a model loaded between requests so mem0 does not pay the load time each call.
+      OLLAMA_KEEP_ALIVE: 30m
+    volumes:
+      - ollama_models:/root/.ollama
+
+volumes:
+  ollama_models:

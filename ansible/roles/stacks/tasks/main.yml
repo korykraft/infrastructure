@@ -1,0 +1,128 @@
+---
+# Compose files are plain files in this repo under docker/. This role does not
+# render them; it puts the repo in place, writes secrets, and starts stacks.
+
+- name: Clone infrastructure repo
+  ansible.builtin.git:
+    repo: "{{ infra_repo_url }}"
+    dest: "{{ infra_repo_dir }}"
+    update: false
+    accept_hostkey: true
+  become: true
+  become_user: "{{ server_user }}"
+
+- name: Link ~/docker to the repo's docker directory
+  ansible.builtin.file:
+    src: "{{ infra_repo_dir }}/docker"
+    dest: "{{ docker_root }}"
+    state: link
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+
+- name: Create the dashboard data directory (owned by the user, not root)
+  ansible.builtin.file:
+    path: "{{ docker_root }}/dashboard/data"
+    state: directory
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0755"
+
+- name: Write .env files from vault
+  ansible.builtin.template:
+    src: "{{ item.template }}"
+    dest: "{{ docker_root }}/{{ item.stack }}/.env"
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0600"
+  loop: "{{ stacks_env }}"
+  loop_control:
+    label: "{{ item.stack }}"
+  when: item.needs | difference(vars.keys() | list) | length == 0
+  no_log: true
+
+- name: Write stripe listener .env files
+  ansible.builtin.template:
+    src: stripe.env.j2
+    dest: "{{ docker_root }}/stripe/{{ item.name }}/.env"
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0600"
+  loop: "{{ stripe_instances }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when: stripe_test_secret_key is defined
+  no_log: true
+
+- name: Clone mem0 source (the mem0 stack builds from it)
+  ansible.builtin.git:
+    repo: https://github.com/mem0ai/mem0.git
+    dest: "{{ docker_root }}/mem0/source"
+    version: "{{ mem0_source_version }}"
+    update: false
+  become: true
+  become_user: "{{ server_user }}"
+  when: "'mem0' in stacks_running"
+
+- name: Start stacks
+  community.docker.docker_compose_v2:
+    project_src: "{{ docker_root }}/{{ item }}"
+    build: policy
+    state: present
+  loop: "{{ stacks_running }}"
+  become: true
+  become_user: "{{ server_user }}"
+
+- name: Pull Ollama models
+  ansible.builtin.command: docker exec ollama ollama pull {{ item }}
+  loop: "{{ ollama_models }}"
+  register: ollama_pull
+  changed_when: "'pulling' in ollama_pull.stdout"
+  become: true
+  become_user: "{{ server_user }}"
+  when: "'ollama' in stacks_running"
+
+- name: Open stack ports in UFW
+  community.general.ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  loop: "{{ stacks_ufw_ports }}"
+  when: not (ansible_is_docker_test | default(false))
+
+- name: Install backup units
+  ansible.builtin.copy:
+    src: "{{ infra_repo_dir }}/systemd/user/{{ item }}"
+    dest: "/home/{{ server_user }}/.config/systemd/user/{{ item }}"
+    remote_src: true
+    owner: "{{ server_user }}"
+    group: "{{ server_user }}"
+    mode: "0644"
+  loop:
+    - kan-backup.service
+    - kan-backup.timer
+    - homelab-backup.service
+    - homelab-backup.timer
+
+- name: Look up server user id
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ server_user }}"
+
+- name: Enable backup timers
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    scope: user
+    enabled: true
+    state: started
+    daemon_reload: true
+  become: true
+  become_user: "{{ server_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ getent_passwd[server_user][1] }}"
+  loop:
+    - kan-backup.timer
+    - homelab-backup.timer
+
+- name: Test Stripe forward target connectivity
+  ansible.builtin.import_tasks: stripe-test-connectivity.yml
+  when: stripe_test_connectivity | default(false)

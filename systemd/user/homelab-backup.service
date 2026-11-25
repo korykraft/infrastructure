@@ -1,0 +1,6 @@
+[Unit]
+Description=Back up homelab service data to ~/backups/homelab
+
+[Service]
+Type=oneshot
+ExecStart=%h/workspace/infrastructure/scripts/backup.sh

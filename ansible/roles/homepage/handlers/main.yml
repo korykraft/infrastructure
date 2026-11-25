@@ -1,6 +1,0 @@
----
-- name: restart ci-status-server
-  ansible.builtin.systemd:
-    name: ci-status-server
-    state: restarted
-    daemon_reload: true

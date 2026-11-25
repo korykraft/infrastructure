@@ -63,14 +63,6 @@
     groups: docker
     append: true
 
-- name: Create docker root directory
-  ansible.builtin.file:
-    path: "/home/{{ server_user }}/docker"
-    state: directory
-    owner: "{{ server_user }}"
-    group: "{{ server_user }}"
-    mode: "0755"
-
 - name: Verify Docker is installed
   ansible.builtin.command: docker --version
   register: docker_version

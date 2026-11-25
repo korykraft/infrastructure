@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Homelab</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%232f9e63'/%3E%3C/svg%3E">
+<style>
+:root {
+  --ground: #e6ebe8;      /* pale panel grey-green */
+  --panel: #f4f7f5;
+  --ink: #17262e;         /* deep slate */
+  --ink-soft: #55676f;
+  --rule: #c5cfca;
+  --link: #1c5d78;
+  --lamp-up: #2f9e63;
+  --lamp-warn: #d6951a;
+  --lamp-down: #c8443a;
+  --lamp-off: #a3afab;
+  --focus: #1c5d78;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #172228; --panel: #1e2c33; --ink: #e3ebe8; --ink-soft: #94a7ad; --rule: #33454d;
+    --link: #8cc7e0; --lamp-up: #45c282; --lamp-warn: #e8ad3a; --lamp-down: #ee6b60; --lamp-off: #5d6f75;
+    --focus: #8cc7e0; color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--ground); color: var(--ink);
+  font: 16px/1.45 "Avenir Next", Avenir, "Segoe UI", "Helvetica Neue", sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+main { max-width: 1240px; margin: 0 auto; padding: 40px 24px 72px; }
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 3px; }
+button { font: inherit; color: inherit; cursor: pointer; }
+
+/* The status sentence is the page's headline. */
+.verdict { margin: 0; font-size: clamp(1.7rem, 1.1rem + 2.4vw, 2.9rem); line-height: 1.12; font-weight: 600; letter-spacing: -0.02em; max-width: 22em; }
+.verdict .bad { color: var(--lamp-down); }
+.under { margin: 12px 0 0; color: var(--ink-soft); }
+.under .warn { color: var(--lamp-down); font-weight: 600; }
+.notice { margin: 20px 0 0; padding: 10px 14px; border-left: 4px solid var(--lamp-down); background: var(--panel); }
+
+.columns { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 56px; margin-top: 44px; align-items: start; }
+@media (max-width: 880px) { .columns { grid-template-columns: 1fr; gap: 44px; } }
+h2 { margin: 0; font-size: 1.05rem; font-weight: 600; }
+.head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding-bottom: 10px; border-bottom: 2px solid var(--ink); }
+.head .aside { color: var(--ink-soft); font-size: 0.9rem; }
+
+/* Services: one row each, lamp first, like an indicator panel. */
+.rows { list-style: none; margin: 0; padding: 0; }
+.rows li { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; column-gap: 14px; align-items: baseline; padding: 11px 0; border-bottom: 1px solid var(--rule); }
+.lamp { width: 12px; height: 12px; border-radius: 50%; background: var(--lamp-off); align-self: center; }
+.up .lamp { background: var(--lamp-up); box-shadow: 0 0 0 3px color-mix(in srgb, var(--lamp-up) 22%, transparent); }
+.degraded .lamp { background: var(--lamp-warn); box-shadow: 0 0 0 3px color-mix(in srgb, var(--lamp-warn) 25%, transparent); }
+.down .lamp { background: var(--lamp-down); box-shadow: 0 0 0 3px color-mix(in srgb, var(--lamp-down) 25%, transparent); }
+.svc-name { font-weight: 600; color: var(--ink); }
+a.svc-name:hover { color: var(--link); }
+.svc-about { color: var(--ink-soft); margin-left: 10px; font-size: 0.93rem; }
+.svc-detail { grid-column: 2 / -1; color: var(--ink-soft); font-size: 0.9rem; }
+.down .svc-detail, .degraded .svc-detail { color: var(--ink); }
+.svc-meta { color: var(--ink-soft); font-size: 0.9rem; white-space: nowrap; }
+.down .svc-meta { color: var(--lamp-down); font-weight: 600; }
+.degraded .svc-meta { color: var(--lamp-warn); font-weight: 600; }
+.stopped .svc-name { font-weight: 500; color: var(--ink-soft); }
+.subhead { margin: 30px 0 0; padding-bottom: 8px; border-bottom: 1px solid var(--ink-soft); color: var(--ink-soft); font-size: 0.93rem; font-weight: 600; }
+
+/* Bookmarks */
+.plain { background: none; border: 0; padding: 0; color: var(--link); }
+.plain:hover { text-decoration: underline; }
+.group { padding: 18px 0 20px; border-bottom: 1px solid var(--rule); }
+.group-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.group-head h3 { margin: 0; font-size: 1rem; font-weight: 600; flex: 1 1 auto; }
+.marks { list-style: none; margin: 10px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 4px 20px; }
+.marks li { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.mark { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto; padding: 6px 0; color: var(--ink); }
+.mark:hover { color: var(--link); text-decoration: none; }
+.mark span.label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile { flex: none; width: 22px; height: 22px; border-radius: 5px; background: var(--rule); color: var(--ink); font-size: 0.75rem; font-weight: 700; display: grid; place-items: center; overflow: hidden; }
+.tile img { width: 100%; height: 100%; object-fit: contain; background: var(--panel); }
+.tools { display: none; gap: 2px; flex: none; }
+.editing .tools { display: flex; }
+.tool { background: none; border: 1px solid transparent; border-radius: 4px; padding: 1px 6px; color: var(--ink-soft); font-size: 0.85rem; line-height: 1.4; }
+.tool:hover:not(:disabled) { border-color: var(--rule); color: var(--ink); }
+.tool:disabled { opacity: 0.3; cursor: default; }
+.add-mark { margin-top: 8px; font-size: 0.93rem; }
+.empty { margin: 18px 0 0; color: var(--ink-soft); max-width: 34em; }
+.add-group { margin-top: 18px; }
+
+dialog { border: 1px solid var(--rule); border-radius: 10px; background: var(--panel); color: var(--ink); padding: 24px; width: min(420px, calc(100vw - 32px)); }
+dialog::backdrop { background: rgb(10 20 25 / 0.45); }
+dialog h3 { margin: 0 0 16px; font-size: 1.1rem; }
+dialog label { display: block; margin-top: 12px; font-size: 0.9rem; color: var(--ink-soft); }
+dialog input { display: block; width: 100%; margin-top: 4px; padding: 8px 10px; font: inherit; color: var(--ink); background: var(--ground); border: 1px solid var(--rule); border-radius: 6px; }
+dialog p { margin: 0 0 4px; }
+.form-error { color: var(--lamp-down); font-size: 0.9rem; min-height: 1.3em; margin-top: 10px; }
+.actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; }
+.btn { padding: 7px 14px; border-radius: 6px; border: 1px solid var(--rule); background: transparent; }
+.btn.primary { background: var(--ink); color: var(--ground); border-color: var(--ink); font-weight: 600; }
+.btn.danger { background: var(--lamp-down); color: #fff; border-color: var(--lamp-down); font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <h1 class="verdict" id="verdict">Checking services</h1>
+  <p class="under" id="under">&nbsp;</p>
+  <div id="notices"></div>
+
+  <div class="columns">
+    <section aria-labelledby="svc-h">
+      <div class="head"><h2 id="svc-h">Services</h2><span class="aside" id="checked"></span></div>
+      <ul class="rows" id="active"></ul>
+      <div id="stopped-wrap" hidden>
+        <p class="subhead">Stopped</p>
+        <ul class="rows" id="stopped"></ul>
+      </div>
+    </section>
+
+    <section aria-labelledby="bm-h" id="bookmarks">
+      <div class="head"><h2 id="bm-h">Bookmarks</h2><button class="plain" id="edit-toggle" aria-pressed="false" hidden>Edit</button></div>
+      <div id="groups"></div>
+      <button class="plain add-group" id="add-group">Add group</button>
+    </section>
+  </div>
+</main>
+
+<dialog id="dlg">
+  <form method="dialog" id="dlg-form" novalidate>
+    <h3 id="dlg-title"></h3>
+    <div id="dlg-body"></div>
+    <div class="form-error" id="dlg-error" role="alert"></div>
+    <div class="actions">
+      <button type="button" class="btn" id="dlg-cancel">Cancel</button>
+      <button type="submit" class="btn primary" id="dlg-ok"></button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const el = (tag, props = {}, ...kids) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === "class") n.className = v;
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+    else if (v !== null && v !== undefined && v !== false) n.setAttribute(k, v === true ? "" : v);
+  }
+  for (const kid of kids) if (kid !== null && kid !== undefined) n.append(kid);
+  return n;
+};
+
+/* ── Services ─────────────────────────────────────────────── */
+const ORDER = { down: 0, degraded: 1, up: 2 };
+const list = (names) => names.length < 2 ? names.join("") : names.slice(0, -1).join(", ") + " and " + names[names.length - 1];
+
+function ago(epoch) {
+  const s = Math.max(0, Date.now() / 1000 - epoch);
+  if (s < 90) return "just now";
+  if (s < 3600) return Math.round(s / 60) + " minutes ago";
+  if (s < 36 * 3600) { const h = Math.round(s / 3600); return h + (h === 1 ? " hour ago" : " hours ago"); }
+  return Math.round(s / 86400) + " days ago";
+}
+
+function serviceRow(s) {
+  const port = s.open_port || s.port;
+  const href = port ? `http://${location.hostname}:${port}${s.open || "/"}` : null;
+  const name = href ? el("a", { class: "svc-name", href }, s.name) : el("span", { class: "svc-name" }, s.name);
+  let meta = "";
+  if (s.state === "down") meta = "Not answering";
+  else if (s.state === "degraded") meta = "Partly running";
+  else if (s.state === "up") meta = s.ms !== null ? s.ms + " ms" : "Running";
+  const li = el("li", { class: s.state },
+    el("span", { class: "lamp", role: "img", "aria-label": { up: "Answering", down: "Not answering", degraded: "Partly running", stopped: "Stopped" }[s.state] }),
+    el("span", {}, name, s.about ? el("span", { class: "svc-about" }, s.about) : null),
+    el("span", { class: "svc-meta" }, meta));
+  if (s.detail) li.append(el("span", { class: "svc-detail" }, s.detail));
+  return li;
+}
+
+function renderStatus(data) {
+  const active = data.services.filter((s) => s.state !== "stopped")
+    .sort((a, b) => ORDER[a.state] - ORDER[b.state] || a.name.localeCompare(b.name));
+  const stopped = data.services.filter((s) => s.state === "stopped").sort((a, b) => a.name.localeCompare(b.name));
+  const bad = active.filter((s) => s.state !== "up");
+
+  const v = $("verdict");
+  v.replaceChildren();
+  if (!active.length) v.append("No services are running.");
+  else if (!bad.length) v.append(`All ${active.length} services are answering.`);
+  else v.append(`${active.length - bad.length} of ${active.length} services are answering. `,
+    el("span", { class: "bad" }, `${list(bad.map((s) => s.name))} ${bad.length === 1 ? "is" : "are"} not.`));
+  document.title = bad.length ? `(${bad.length}) Homelab` : "Homelab";
+
+  const u = $("under");
+  u.replaceChildren();
+  const b = data.backup;
+  if (b && b.available) {
+    if (b.last_failed) u.append(el("span", { class: "warn" }, "The latest backup failed. "));
+    if (b.last_ok) {
+      const stale = Date.now() / 1000 - b.last_ok > 36 * 3600;
+      u.append(el("span", { class: stale ? "warn" : "" }, `Last good backup ${ago(b.last_ok)}`), `, ${b.count} kept.`);
+    } else u.append(el("span", { class: "warn" }, "No backup has been made yet."));
+  } else u.append("Backup status is not available.");
+
+  const notices = [data.docker_error, data.config_error].filter(Boolean);
+  $("notices").replaceChildren(...notices.map((n) => el("p", { class: "notice" }, n)));
+
+  $("active").replaceChildren(...active.map(serviceRow));
+  $("stopped").replaceChildren(...stopped.map(serviceRow));
+  $("stopped-wrap").hidden = !stopped.length;
+  $("checked").textContent = "Checked " + new Date(data.generated * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+
+async function refreshStatus() {
+  try {
+    const r = await fetch("/api/status");
+    if (!r.ok) throw new Error(r.status);
+    renderStatus(await r.json());
+  } catch (e) {
+    $("verdict").textContent = "The dashboard server is not answering.";
+    $("under").textContent = "Status below may be out of date. Retrying every 15 seconds.";
+  }
+}
+
+/* ── Bookmarks ────────────────────────────────────────────── */
+let doc = { groups: [] };
+let editing = false;
+
+function tile(b) {
+  const t = el("span", { class: "tile", "aria-hidden": "true" }, (b.name.trim()[0] || "?").toUpperCase());
+  try {
+    const img = el("img", { src: new URL(b.url).origin + "/favicon.ico", alt: "", loading: "lazy", referrerpolicy: "no-referrer" });
+    img.addEventListener("load", () => { if (img.naturalWidth > 1) t.replaceChildren(img); });
+  } catch (e) { /* keep the letter */ }
+  return t;
+}
+
+const tool = (label, title, onclick, disabled) => el("button", { class: "tool", type: "button", title, "aria-label": title, onclick, disabled }, label);
+
+function move(arr, i, by) { const [x] = arr.splice(i, 1); arr.splice(i + by, 0, x); }
+
+function renderBookmarks() {
+  const wrap = $("groups");
+  $("bookmarks").classList.toggle("editing", editing);
+  const toggle = $("edit-toggle");
+  toggle.hidden = !doc.groups.length;
+  toggle.textContent = editing ? "Done" : "Edit";
+  toggle.setAttribute("aria-pressed", editing);
+  if (!doc.groups.length) {
+    wrap.replaceChildren(el("p", { class: "empty" }, "No bookmarks yet. Add a group, such as Work or Reading, then add bookmarks inside it."));
+    return;
+  }
+  wrap.replaceChildren(...doc.groups.map((g, gi) => el("div", { class: "group" },
+    el("div", { class: "group-head" },
+      el("h3", {}, g.name),
+      el("span", { class: "tools" },
+        tool("↑", `Move ${g.name} up`, () => change((d) => move(d.groups, gi, -1)), gi === 0),
+        tool("↓", `Move ${g.name} down`, () => change((d) => move(d.groups, gi, 1)), gi === doc.groups.length - 1),
+        tool("Rename", `Rename ${g.name}`, () => groupDialog(gi)),
+        tool("Delete", `Delete ${g.name}`, () => deleteGroupDialog(gi)))),
+    el("ul", { class: "marks" }, ...g.bookmarks.map((b, bi) => el("li", {},
+      el("a", { class: "mark", href: b.url, title: b.url, rel: "noreferrer" }, tile(b), el("span", { class: "label" }, b.name)),
+      el("span", { class: "tools" },
+        tool("←", `Move ${b.name} earlier`, () => change((d) => move(d.groups[gi].bookmarks, bi, -1)), bi === 0),
+        tool("→", `Move ${b.name} later`, () => change((d) => move(d.groups[gi].bookmarks, bi, 1)), bi === g.bookmarks.length - 1),
+        tool("Edit", `Edit ${b.name}`, () => bookmarkDialog(gi, bi)),
+        tool("✕", `Delete ${b.name}`, () => change((d) => d.groups[gi].bookmarks.splice(bi, 1))))))),
+    el("button", { class: "plain add-mark", type: "button", onclick: () => bookmarkDialog(gi, null) }, "Add bookmark"))));
+}
+
+/* Apply a change to a copy, save it, and only then show it. */
+async function change(mutate) {
+  const next = structuredClone(doc);
+  mutate(next);
+  const r = await fetch("/api/bookmarks", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(next) });
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(body.error || `The server answered ${r.status}`);
+  doc = body;
+  if (!doc.groups.length) editing = false;
+  renderBookmarks();
+}
+
+const dlg = $("dlg");
+let onSubmit = null;
+function openDialog(title, okLabel, body, submit, danger) {
+  $("dlg-title").textContent = title;
+  $("dlg-body").replaceChildren(...body);
+  $("dlg-error").textContent = "";
+  const ok = $("dlg-ok");
+  ok.textContent = okLabel;
+  ok.className = "btn " + (danger ? "danger" : "primary");
+  onSubmit = submit;
+  dlg.showModal();
+  const first = dlg.querySelector("input");
+  if (first) { first.focus(); first.select(); }
+}
+$("dlg-cancel").addEventListener("click", () => dlg.close());
+$("dlg-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  $("dlg-ok").disabled = true;
+  try { await onSubmit(); dlg.close(); }
+  catch (err) { $("dlg-error").textContent = "Not saved. " + err.message; }
+  finally { $("dlg-ok").disabled = false; }
+});
+
+const field = (label, id, value, attrs = {}) => el("label", { for: id }, label, el("input", { id, value: value || "", autocomplete: "off", ...attrs }));
+
+function groupDialog(gi) {
+  const g = gi === null ? null : doc.groups[gi];
+  openDialog(g ? "Rename group" : "Add group", g ? "Rename group" : "Add group",
+    [field("Name", "f-name", g && g.name, { maxlength: 80 })],
+    () => {
+      const name = $("f-name").value.trim();
+      if (!name) throw new Error("Give the group a name.");
+      return change((d) => { if (g) d.groups[gi].name = name; else d.groups.push({ name, bookmarks: [] }); });
+    });
+}
+
+function deleteGroupDialog(gi) {
+  const g = doc.groups[gi];
+  if (!g.bookmarks.length) return change((d) => d.groups.splice(gi, 1)).catch((e) => alert("Not deleted. " + e.message));
+  const n = g.bookmarks.length;
+  openDialog(`Delete ${g.name}?`, "Delete group",
+    [el("p", {}, `This also deletes the ${n === 1 ? "bookmark" : n + " bookmarks"} inside it.`)],
+    () => change((d) => d.groups.splice(gi, 1)), true);
+}
+
+function bookmarkDialog(gi, bi) {
+  const b = bi === null ? null : doc.groups[gi].bookmarks[bi];
+  openDialog(b ? "Edit bookmark" : `Add bookmark to ${doc.groups[gi].name}`, b ? "Save bookmark" : "Add bookmark",
+    [field("Address", "f-url", b && b.url, { inputmode: "url", placeholder: "example.com or http://192.168.1.84:3006", maxlength: 2000 }),
+     field("Name", "f-name", b && b.name, { placeholder: "Leave empty to use the site name", maxlength: 80 })],
+    () => {
+      let url = $("f-url").value.trim();
+      if (!url) throw new Error("Enter an address.");
+      if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(url)) {
+        // Home network addresses (an IP, a bare hostname, .local) rarely have https.
+        const host = url.split(/[/:?#]/)[0];
+        const local = /^(\d{1,3}\.){3}\d{1,3}$/.test(host) || !host.includes(".") || /\.(local|lan|home)$/i.test(host);
+        url = (local ? "http://" : "https://") + url;
+      }
+      let parsed;
+      try { parsed = new URL(url); } catch (e) { throw new Error("That address is not valid."); }
+      if (!/^https?:$/.test(parsed.protocol)) throw new Error("The address must start with http:// or https://.");
+      const name = $("f-name").value.trim() || parsed.hostname.replace(/^www\./, "");
+      return change((d) => {
+        const marks = d.groups[gi].bookmarks;
+        if (b) Object.assign(marks[bi], { name, url }); else marks.push({ name, url });
+      });
+    });
+}
+
+$("add-group").addEventListener("click", () => groupDialog(null));
+$("edit-toggle").addEventListener("click", () => { editing = !editing; renderBookmarks(); });
+
+async function loadBookmarks() {
+  try {
+    const r = await fetch("/api/bookmarks");
+    const body = await r.json();
+    if (!r.ok) throw new Error(body.error);
+    doc = body;
+    renderBookmarks();
+  } catch (e) {
+    $("groups").replaceChildren(el("p", { class: "notice" }, "Bookmarks could not be loaded. " + (e.message || "")));
+  }
+}
+
+/* The inline tools call change() without a dialog; report failures there too. */
+window.addEventListener("unhandledrejection", (e) => { e.preventDefault(); alert("Not saved. " + (e.reason && e.reason.message || e.reason)); });
+
+refreshStatus();
+loadBookmarks();
+setInterval(() => { if (!document.hidden) refreshStatus(); }, 15000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshStatus(); });
+</script>
+</body>
+</html>
