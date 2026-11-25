@@ -9,7 +9,6 @@
     "ollama":         { "name": "Ollama",       "about": "Local models, CPU only",    "port": 11434, "path": "/api/version" },
     "forgejo":        { "name": "Forgejo",      "about": "Git hosting",               "port": 3000 },
     "dockge":         { "name": "Dockge",       "about": "Manage stacks",             "port": 5001 },
-    "kanboard":       { "name": "Kanboard",     "about": "Boards",                    "port": 3040 },
     "searxng":        { "name": "SearXNG",      "about": "Search",                    "port": 8080, "path": "/healthz", "open": "/" },
     "mcp-excalidraw": { "name": "Excalidraw",   "about": "Canvas for the MCP server", "port": 3030, "path": "/health", "open": "/" },
     "stripe":         { "name": "Stripe listener",              "about": "Webhooks to port 8787" },

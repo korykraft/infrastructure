@@ -9,7 +9,6 @@ stacks_running:
   - dashboard
   - dockge
   - kan
-  - kanboard
   - mcp-excalidraw
   - mem0
   - ollama

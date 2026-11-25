@@ -47,7 +47,6 @@ Rules that keep this working:
 | forgejo | http://192.168.1.84:3000, ssh :222 | stopped | yes | Kept for later |
 | dashboard | http://192.168.1.84:3005 | running | bookmarks | Status page and bookmarks, see below |
 | dockge | http://192.168.1.84:5001 | running | no | Manages the stacks in `~/docker` |
-| kanboard | http://192.168.1.84:3040 | running | no | |
 | searxng | http://192.168.1.84:8080 | running | no | Stateless |
 | mcp-excalidraw | http://192.168.1.84:3030 | running | no | Canvas for the Excalidraw MCP server |
 | stripe, stripe/pictubook-vm | none | running | no | Webhook listeners, forward to host port 8787 |
@@ -230,7 +229,7 @@ To roll Kan back to an older board state instead, follow
 
 8. Start Forgejo if wanted: `cd ~/docker/forgejo && docker compose up -d`.
 
-What a rebuild does not bring back: Dockge settings, Kanboard data, the
+What a rebuild does not bring back: Dockge settings, the
 projects under `~/workspace`, Hermes config, and Syncthing pairing.
 
 ## Secrets
