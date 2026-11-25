@@ -24,8 +24,3 @@ ansible/.vault_pass
 /docker/vaultwarden/data/
 /docker/dashboard/data/
 __pycache__/
-
-# Retired stacks whose files are still on disk.
-/docker/homepage/
-/docker/hoppscotch/
-/docker/pihole/
