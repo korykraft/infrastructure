@@ -250,8 +250,8 @@ def clean_bookmarks(doc):
                 raise ValueError("A bookmark address is missing or too long")
             url = url.strip()
             parsed = urlparse(url)
-            if parsed.scheme not in ("http", "https") or not parsed.netloc:
-                raise ValueError(f"Address must start with http:// or https://: {url[:60]}")
+            if not (parsed.scheme in ("http", "https") and parsed.netloc or parsed.scheme == "file" and parsed.path):
+                raise ValueError(f"Address must start with http://, https:// or file://: {url[:60]}")
             marks.append({"id": new_id(b.get("id")), "name": clean_text(b.get("name"), "Bookmark"), "url": url})
         groups.append({"id": new_id(g.get("id")), "name": clean_text(g.get("name"), "Group"), "bookmarks": marks})
     return {"groups": groups}

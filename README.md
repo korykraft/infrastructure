@@ -73,6 +73,8 @@ A small Python app with no dependencies, in `docker/dashboard/`.
   `docker/dashboard/data/service-groups.json`, which is backed up.
 - **Bookmarks** are added, grouped, reordered and deleted on the page itself
   and stored in `docker/dashboard/data/bookmarks.json`, which is backed up.
+  A `file://` bookmark copies its address when clicked, since browsers block
+  opening local files from a web page; paste it into the address bar.
 - It has no login, like the other services here: anyone on the home network
   can open it and edit bookmarks. It reads the Docker socket, so do not expose
   it to the internet.

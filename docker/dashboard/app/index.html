@@ -325,10 +325,32 @@ let editing = false;
 function tile(b) {
   const t = el("span", { class: "tile", "aria-hidden": "true" }, (b.name.trim()[0] || "?").toUpperCase());
   try {
-    const img = el("img", { src: new URL(b.url).origin + "/favicon.ico", alt: "", loading: "lazy", referrerpolicy: "no-referrer" });
+    const u = new URL(b.url);
+    if (u.protocol === "file:") return t;
+    const img = el("img", { src: u.origin + "/favicon.ico", alt: "", loading: "lazy", referrerpolicy: "no-referrer" });
     img.addEventListener("load", () => { if (img.naturalWidth > 1) t.replaceChildren(img); });
   } catch (e) { /* keep the letter */ }
   return t;
+}
+
+// Browsers refuse to open file:// links from an http page, so copy the address to paste into the address bar.
+async function copyFileLink(e, b) {
+  e.preventDefault();
+  const label = e.currentTarget.querySelector(".label");
+  try {
+    // navigator.clipboard only exists on https or localhost; plain http needs execCommand.
+    if (navigator.clipboard) await navigator.clipboard.writeText(b.url);
+    else {
+      const t = el("textarea", {}, b.url);
+      document.body.append(t);
+      t.select();
+      const ok = document.execCommand("copy");
+      t.remove();
+      if (!ok) throw new Error();
+    }
+    label.textContent = "Copied, paste it in the address bar";
+  } catch (err) { label.textContent = "Could not copy"; }
+  setTimeout(() => { label.textContent = b.name; }, 2500);
 }
 
 const tool = (label, title, onclick, disabled) => el("button", { class: "tool", type: "button", title, "aria-label": title, onclick, disabled }, label);
@@ -355,7 +377,7 @@ function renderBookmarks() {
         tool("Rename", `Rename ${g.name}`, () => groupDialog(gi)),
         tool("Delete", `Delete ${g.name}`, () => deleteGroupDialog(gi)))),
     el("ul", { class: "marks" }, ...g.bookmarks.map((b, bi) => el("li", {},
-      el("a", { class: "mark", href: b.url, title: b.url, rel: "noreferrer" }, tile(b), el("span", { class: "label" }, b.name)),
+      el("a", { class: "mark", href: b.url, title: b.url, rel: "noreferrer", ...(b.url.startsWith("file:") && { onclick: (e) => copyFileLink(e, b) }) }, tile(b), el("span", { class: "label" }, b.name)),
       el("span", { class: "tools" },
         tool("←", `Move ${b.name} earlier`, () => change((d) => move(d.groups[gi].bookmarks, bi, -1)), bi === 0),
         tool("→", `Move ${b.name} later`, () => change((d) => move(d.groups[gi].bookmarks, bi, 1)), bi === g.bookmarks.length - 1),
@@ -424,12 +446,13 @@ function deleteGroupDialog(gi) {
 function bookmarkDialog(gi, bi) {
   const b = bi === null ? null : doc.groups[gi].bookmarks[bi];
   openDialog(b ? "Edit bookmark" : `Add bookmark to ${doc.groups[gi].name}`, b ? "Save bookmark" : "Add bookmark",
-    [field("Address", "f-url", b && b.url, { inputmode: "url", placeholder: "example.com or http://192.168.1.84:3006", maxlength: 2000 }),
+    [field("Address", "f-url", b && b.url, { inputmode: "url", placeholder: "example.com, http://192.168.1.84:3006 or file:///path", maxlength: 2000 }),
      field("Name", "f-name", b && b.name, { placeholder: "Leave empty to use the site name", maxlength: 80 })],
     () => {
       let url = $("f-url").value.trim();
       if (!url) throw new Error("Enter an address.");
-      if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(url)) {
+      if (url.startsWith("/")) url = "file://" + url;
+      else if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(url)) {
         // Home network addresses (an IP, a bare hostname, .local) rarely have https.
         const host = url.split(/[/:?#]/)[0];
         const local = /^(\d{1,3}\.){3}\d{1,3}$/.test(host) || !host.includes(".") || /\.(local|lan|home)$/i.test(host);
@@ -437,8 +460,10 @@ function bookmarkDialog(gi, bi) {
       }
       let parsed;
       try { parsed = new URL(url); } catch (e) { throw new Error("That address is not valid."); }
-      if (!/^https?:$/.test(parsed.protocol)) throw new Error("The address must start with http:// or https://.");
-      const name = $("f-name").value.trim() || parsed.hostname.replace(/^www\./, "");
+      if (!/^(https?|file):$/.test(parsed.protocol)) throw new Error("The address must start with http://, https:// or file://.");
+      const name = $("f-name").value.trim() || (parsed.protocol === "file:"
+        ? decodeURIComponent(parsed.pathname.split("/").filter(Boolean).pop() || "") || "File"
+        : parsed.hostname.replace(/^www\./, ""));
       return change((d) => {
         const marks = d.groups[gi].bookmarks;
         if (b) Object.assign(marks[bi], { name, url }); else marks.push({ name, url });
