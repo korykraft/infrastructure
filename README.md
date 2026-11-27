@@ -73,8 +73,12 @@ A small Python app with no dependencies, in `docker/dashboard/`.
   `docker/dashboard/data/service-groups.json`, which is backed up.
 - **Bookmarks** are added, grouped, reordered and deleted on the page itself
   and stored in `docker/dashboard/data/bookmarks.json`, which is backed up.
-  A `file://` bookmark copies its address when clicked, since browsers block
-  opening local files from a web page; paste it into the address bar.
+  A `file://` bookmark opens the file in Firefox once its `LocalFileLinks`
+  policy allows this page (one-time, on the Mac):
+  `sudo defaults write /Library/Preferences/org.mozilla.firefox EnterprisePoliciesEnabled -bool TRUE`
+  and `sudo defaults write /Library/Preferences/org.mozilla.firefox LocalFileLinks -array "http://192.168.1.84:3005"`,
+  then restart Firefox. Other browsers block it, so there a click copies the
+  address to paste into the address bar.
 - It has no login, like the other services here: anyone on the home network
   can open it and edit bookmarks. It reads the Docker socket, so do not expose
   it to the internet.

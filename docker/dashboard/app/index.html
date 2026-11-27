@@ -334,6 +334,8 @@ function tile(b) {
 }
 
 // Browsers refuse to open file:// links from an http page, so copy the address to paste into the address bar.
+// Firefox can open them once its LocalFileLinks policy lists this page (see README), so it keeps the plain link.
+const OPENS_FILE_LINKS = navigator.userAgent.includes("Firefox");
 async function copyFileLink(e, b) {
   e.preventDefault();
   const label = e.currentTarget.querySelector(".label");
@@ -377,7 +379,7 @@ function renderBookmarks() {
         tool("Rename", `Rename ${g.name}`, () => groupDialog(gi)),
         tool("Delete", `Delete ${g.name}`, () => deleteGroupDialog(gi)))),
     el("ul", { class: "marks" }, ...g.bookmarks.map((b, bi) => el("li", {},
-      el("a", { class: "mark", href: b.url, title: b.url, rel: "noreferrer", ...(b.url.startsWith("file:") && { onclick: (e) => copyFileLink(e, b) }) }, tile(b), el("span", { class: "label" }, b.name)),
+      el("a", { class: "mark", href: b.url, title: b.url, rel: "noreferrer", ...(b.url.startsWith("file:") && !OPENS_FILE_LINKS && { onclick: (e) => copyFileLink(e, b) }) }, tile(b), el("span", { class: "label" }, b.name)),
       el("span", { class: "tools" },
         tool("←", `Move ${b.name} earlier`, () => change((d) => move(d.groups[gi].bookmarks, bi, -1)), bi === 0),
         tool("→", `Move ${b.name} later`, () => change((d) => move(d.groups[gi].bookmarks, bi, 1)), bi === g.bookmarks.length - 1),
